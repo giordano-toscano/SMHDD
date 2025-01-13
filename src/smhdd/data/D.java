@@ -38,6 +38,21 @@ public class D {
         return data.toArray(String[][]::new);
     }
 
+    public String getName(){
+        return this.name;
+    }
+
+    public String[][] getExamples(){
+        return this.examples;
+    }
+
+    public String[] getColumns(){
+        return this.columns;
+    }
+
+
+}
+
     // private static void dadosStrToD(String[][] dadosStr){
                 
     //     //Capturando os valores distintos de cada atributo
@@ -95,24 +110,6 @@ public class D {
     //     //Gera Bases de exemplos positivos (D+) e negativos (D-)
     //     D.geraDpDn(dadosStr, dadosInt);
     // }
-
-
-
-
-    public String getName(){
-        return this.name;
-    }
-
-    public String[][] getExamples(){
-        return this.examples;
-    }
-
-    public String[] getColumns(){
-        return this.columns;
-    }
-
-
-}
 
 /*
  * 
