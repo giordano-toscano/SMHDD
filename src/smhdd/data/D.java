@@ -10,16 +10,19 @@ import java.util.List;
 
 public class D {
 
-    private String[][] examples; // equivalent to dadosStr
-    private String[] columnNames;   // equivalent to nomeVariaveis 
+    //private String[][] examples; // equivalent to dadosStr
+    private static String targetValue = "p";
+    private String[] variableNames;   // equivalent to nomeVariaveis 
+    private int[] items;
     private String name; // dataset name
 
     private int[][] dp; // positive examples
     private int[][] dn; // negative examples
 
     public D(String path, String delimiter) throws IOException{
-        this.examples = this.loadFile(path, delimiter);
-        dadosStrToD(this.examples);
+        String[][] examplesStr = this.loadFile(path, delimiter);
+        int[][] examplesInt = convertExamplesFromStrToInt(examplesStr);
+        generateDpAndDn(examplesStr, examplesInt, "p");
     }
 
     //CHECKED !!!
@@ -29,7 +32,7 @@ public class D {
             String line;
             // Column names in the first line
             line = br.readLine();
-            this.columnNames = line.split(delimiter);
+            this.variableNames = line.split(delimiter);
 
             while ((line = br.readLine()) != null) {
                 // Split the line by commas (or other delimiter if necessary)
@@ -41,10 +44,10 @@ public class D {
         return data.toArray(String[][]::new);
     }
 
-    private void dadosStrToD(String[][] dadosStr){
+    private int[][] convertExamplesFromStrToInt(String[][] examplesStr){
         int numeroItens = 0;
-        int numeroAtributos = this.columnNames.length - 1;
-        int numeroExemplos = this.examples.length;
+        int numeroAtributos = this.variableNames.length - 1;
+        int numeroExemplos = examplesStr.length;
                 
         //Capturando os valores distintos de cada atributo
         ArrayList<HashSet<String>> valoresDistintosAtributos = new ArrayList<>(); //Amazena os valores distintos de cada atributo em um linha
@@ -52,7 +55,7 @@ public class D {
         for(int i = 0; i < numeroAtributos; i++){
             HashSet<String> valoresDistintosAtributo = new HashSet<>(); //Armazena valores distintos de apenas um atributo. Criar HashSet para armezenar valores distintos de um atributo. Não admite valores repetidos!
             for(int j = 0; j < numeroExemplos; j++){
-                valoresDistintosAtributo.add(dadosStr[j][i]); //Coleção não admite valores repetidos a baixo custo computacional.
+                valoresDistintosAtributo.add(examplesStr[j][i]); //Coleção não admite valores repetidos a baixo custo computacional.
             }
             numeroItens += valoresDistintosAtributo.size();
             
@@ -66,7 +69,7 @@ public class D {
         int[] itemValor = new int[numeroItens];
             
         //Carrega arrays com universos de itens com valores reais e respectivos inteiros mapeados
-        int[][] dadosInt = new int[numeroExemplos][numeroAtributos]; //dados no formato inteiro: mais rápido compararinteiros que strings
+        int[][] examplesInt = new int[numeroExemplos][numeroAtributos]; //dados no formato inteiro: mais rápido compararinteiros que strings
         int indiceItem = 0; //Indice vai de zero ao número de itens total
         for(int indiceAtributo = 0; indiceAtributo < valoresDistintosAtributos.size(); indiceAtributo++){
             Iterator valoresDistintosAtributoIterator = valoresDistintosAtributos.get(indiceAtributo).iterator(); //Capturando valores distintos do atributo de indice i
@@ -76,7 +79,7 @@ public class D {
             //Atribui inteiro para atributo e a cada valor do atributo.  
             //Realizar mapeamento na matriz de dados no formato inteiro
             while(valoresDistintosAtributoIterator.hasNext()){
-                itemAtributoStr[indiceItem] = this.columnNames[indiceAtributo]; //
+                itemAtributoStr[indiceItem] = this.variableNames[indiceAtributo]; //
                 itemValorStr[indiceItem] = (String)valoresDistintosAtributoIterator.next();
 
                 // if(isNumber(D.itemValorStr[indiceItem])){
@@ -86,101 +89,81 @@ public class D {
                 itemAtributo[indiceItem] = indiceAtributo;
                 itemValor[indiceItem] = indiceValor;               
                 
-                //Preenche respectivo item (atributo, Valor) na matrix dadosInt com inteiro que mapeia valor categórico da base
-                for(int m = 0; m < numeroExemplos; m++){
-                    if(dadosStr[m][indiceAtributo].equals(itemValorStr[indiceItem])){
-                        dadosInt[m][indiceAtributo] = itemValor[indiceItem];
+                //Preenche respectivo item (atributo, Valor) na matrix examplesInt com inteiro que mapeia valor categórico da base
+                for(int m = 0; m < numeroExemplos; m++){ 
+                    if(examplesStr[m][indiceAtributo].equals(itemValorStr[indiceItem])){
+                        examplesInt[m][indiceAtributo] = itemValor[indiceItem];
                     }
                 }
                 indiceValor++;
                 indiceItem++;
             }     
         } 
-        int[][] array = dadosInt;
-        for (int[] row : array) {
-            for (int cell : row) {
-                System.out.print(cell + "\t");
-            }
-            System.out.println();
-            
+
+        this.items = new int[numeroItens];
+        for(int l = 0; l < numeroItens; l++){
+            this.items[l] = l;
         }
-   
-        //Gera Bases de exemplos positivos (D+) e negativos (D-)
-        //D.geraDpDn(dadosStr, dadosInt);
+        // Print Items
+        for(int n = 0; n < numeroItens; n++){
+            System.out.print(this.items[n] + "\t");
+        }
+        // End Print Items
+        return examplesInt;
     }
+
+    private void generateDpAndDn(String[][] examplesStr, int[][] examplesInt, String targetValue){
+        //Capturar número de exemplo positivos (y="p") e negativos (y="n")
+        int labelIndex = this.variableNames.length - 1;
+        int attributeCount = this.variableNames.length - 1;
+        int examplesCount = examplesStr.length;
+
+        //Counting the number of positive and negative examples
+        int positiveExamplesCount = 0;
+        int negativeExamplesCount = 0;
+        String label;
+        for(int i = 0; i < examplesCount; i++){
+            label = examplesStr[i][labelIndex];
+            if(label.equals(targetValue)){
+                positiveExamplesCount++;
+            }else{
+                negativeExamplesCount++;
+            }
+        }
+        
+        //inicializando Dp e Dn
+        this.dp = new int[positiveExamplesCount][attributeCount];
+        this.dn = new int[negativeExamplesCount][attributeCount];
+        
+        int indiceDp = 0;
+        int indiceDn = 0;
+        for(int i = 0; i < examplesCount; i++){
+            label = examplesStr[i][labelIndex];
+    
+            if(label.equals(targetValue)){
+                for(int j = 0; j < attributeCount; j++){
+                    dp[indiceDp][j] = examplesInt[i][j];
+                }
+                indiceDp++;
+            }else{
+                for(int j = 0; j < attributeCount; j++){
+                    dn[indiceDn][j] = examplesInt[i][j];
+                }
+                indiceDn++;            
+            }
+        }
+    }
+
 
     public String getName(){
         return this.name;
     }
 
-    public String[][] getExamples(){
-        return this.examples;
+    public String[] getVariableNames(){
+        return this.variableNames;
     }
-
-    public String[] getColumnNames(){
-        return this.columnNames;
-    }
-
 
 }
-
-    // private static void dadosStrToD(String[][] dadosStr){
-                
-    //     //Capturando os valores distintos de cada atributo
-    //     ArrayList<HashSet<String>> valoresDistintosAtributos = new ArrayList<>(); //Amazena os valores distintos de cada atributo em um linha
-    //     D.numeroItens = 0;
-    //     for(int i = 0; i < D.numeroAtributos; i++){
-    //         HashSet<String> valoresDistintosAtributo = new HashSet<>(); //Armazena valores distintos de apenas um atributo. Criar HashSet para armezenar valores distintos de um atributo. Não admite valores repetidos!
-    //         for(int j = 0; j < D.numeroExemplos; j++){
-    //             valoresDistintosAtributo.add(dadosStr[j][i]); //Coleção não admite valores repetidos a baixo custo computacional.
-    //         }
-    //         D.numeroItens += valoresDistintosAtributo.size();
-            
-    //         valoresDistintosAtributos.add(valoresDistintosAtributo); //Adiciona lista de valores distintos do atributo de índice i na posição i do atributo atributosEvalores
-    //     }
-        
-    //     //Gera 4 arrays para armazenar o universo deatributos e valores no formato original (String) e mapeado para inteiro.
-    //     D.itemAtributoStr = new String[D.numeroItens];
-    //     D.itemValorStr = new String[D.numeroItens];
-    //     D.itemAtributo = new int[D.numeroItens];
-    //     D.itemValor = new int[D.numeroItens];
-    //     D.numericAttributes = new ArrayList<>();
-            
-    //     //Carrega arrays com universos de itens com valores reais e respectivos inteiros mapeados
-    //     int[][] dadosInt = new int[D.numeroExemplos][D.numeroAtributos]; //dados no formato inteiro: mais rápido compararinteiros que strings
-    //     int indiceItem = 0; //Indice vai de zero ao número de itens total
-    //     for(int indiceAtributo = 0; indiceAtributo < valoresDistintosAtributos.size(); indiceAtributo++){
-    //         Iterator valoresDistintosAtributoIterator = valoresDistintosAtributos.get(indiceAtributo).iterator(); //Capturando valores distintos do atributo de indice i
-    //         int indiceValor = 0; //vai mapear um inteiro distinto para cada valor distinto de cada variável
-            
-    //         //Para cada atributo: 
-    //         //Atribui inteiro para atributo e a cada valor do atributo.  
-    //         //Realizar mapeamento na matriz de dados no formato inteiro
-    //         while(valoresDistintosAtributoIterator.hasNext()){
-    //             D.itemAtributoStr[indiceItem] = D.nomeVariaveis[indiceAtributo]; //
-    //             D.itemValorStr[indiceItem] = (String)valoresDistintosAtributoIterator.next();
-
-    //             if(isNumber(D.itemValorStr[indiceItem])){
-    //                 D.numericAttributes.add(indiceAtributo);
-    //             }
-
-    //             D.itemAtributo[indiceItem] = indiceAtributo;
-    //             D.itemValor[indiceItem] = indiceValor;               
-                
-    //             //Preenche respectivo item (atributo, Valor) na matrix dadosInt com inteiro que mapeia valor categórico da base
-    //             for(int m = 0; m < D.numeroExemplos; m++){
-    //                 if(dadosStr[m][indiceAtributo].equals(D.itemValorStr[indiceItem])){
-    //                     dadosInt[m][indiceAtributo] = D.itemValor[indiceItem];
-    //                 }
-    //             }
-    //             indiceValor++;
-    //             indiceItem++;
-    //         }     
-    //     } 
-        
-    //     //Gera Bases de exemplos positivos (D+) e negativos (D-)
-    //     D.geraDpDn(dadosStr, dadosInt);
-    // }
 
 /*
  * 
