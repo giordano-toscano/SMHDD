@@ -10,14 +10,17 @@ import java.util.List;
 
 public class D {
 
-    //private String[][] examples; // equivalent to dadosStr
+    private String name; // dataset name
+
     private static String targetValue = "p";
     private String[] variableNames;   // equivalent to nomeVariaveis 
     private int[] items;
-    private String name; // dataset name
-
     private int[][] dp; // positive examples
     private int[][] dn; // negative examples
+
+    // Counters
+    private int attributeCount;
+    private int exampleCount;
 
     public D(String path, String delimiter) throws IOException{
         String[][] examplesStr = this.loadFile(path, delimiter);
@@ -41,20 +44,24 @@ public class D {
             }
         }
         // Convert List<String[]> to String[][]
-        return data.toArray(String[][]::new);
+        String[][] exampleStrMatrix = data.toArray(String[][]::new);
+
+        // Initializing attributes
+        this.attributeCount = this.variableNames.length - 1;
+        this.exampleCount = exampleStrMatrix.length;
+
+        return exampleStrMatrix;
     }
 
     private int[][] convertExamplesFromStrToInt(String[][] examplesStr){
         int numeroItens = 0;
-        int numeroAtributos = this.variableNames.length - 1;
-        int numeroExemplos = examplesStr.length;
                 
         //Capturando os valores distintos de cada atributo
         ArrayList<HashSet<String>> valoresDistintosAtributos = new ArrayList<>(); //Amazena os valores distintos de cada atributo em um linha
         
-        for(int i = 0; i < numeroAtributos; i++){
+        for(int i = 0; i < this.attributeCount; i++){
             HashSet<String> valoresDistintosAtributo = new HashSet<>(); //Armazena valores distintos de apenas um atributo. Criar HashSet para armezenar valores distintos de um atributo. Não admite valores repetidos!
-            for(int j = 0; j < numeroExemplos; j++){
+            for(int j = 0; j < this.exampleCount; j++){
                 valoresDistintosAtributo.add(examplesStr[j][i]); //Coleção não admite valores repetidos a baixo custo computacional.
             }
             numeroItens += valoresDistintosAtributo.size();
@@ -69,7 +76,7 @@ public class D {
         int[] itemValor = new int[numeroItens];
             
         //Carrega arrays com universos de itens com valores reais e respectivos inteiros mapeados
-        int[][] examplesInt = new int[numeroExemplos][numeroAtributos]; //dados no formato inteiro: mais rápido compararinteiros que strings
+        int[][] examplesInt = new int[this.exampleCount][this.attributeCount]; //dados no formato inteiro: mais rápido compararinteiros que strings
         int indiceItem = 0; //Indice vai de zero ao número de itens total
         for(int indiceAtributo = 0; indiceAtributo < valoresDistintosAtributos.size(); indiceAtributo++){
             Iterator valoresDistintosAtributoIterator = valoresDistintosAtributos.get(indiceAtributo).iterator(); //Capturando valores distintos do atributo de indice i
@@ -90,7 +97,7 @@ public class D {
                 itemValor[indiceItem] = indiceValor;               
                 
                 //Preenche respectivo item (atributo, Valor) na matrix examplesInt com inteiro que mapeia valor categórico da base
-                for(int m = 0; m < numeroExemplos; m++){ 
+                for(int m = 0; m < this.exampleCount; m++){ 
                     if(examplesStr[m][indiceAtributo].equals(itemValorStr[indiceItem])){
                         examplesInt[m][indiceAtributo] = itemValor[indiceItem];
                     }
@@ -161,6 +168,14 @@ public class D {
 
     public String[] getVariableNames(){
         return this.variableNames;
+    }
+
+    public int getAttributeCount(){
+        return this.attributeCount;
+    }
+
+    public int getExampleCount(){
+        return this.exampleCount;
     }
 
 }
