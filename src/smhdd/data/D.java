@@ -39,8 +39,7 @@ public class D {
 
             while ((line = br.readLine()) != null) {
                 // Split the line by commas (or other delimiter if necessary)
-                String[] row = line.split(delimiter);
-                data.add(row);
+                data.add(line.split(delimiter));
             }
         }
         // Convert List<String[]> to String[][]
@@ -50,49 +49,59 @@ public class D {
         this.attributeCount = this.variableNames.length - 1;
         this.exampleCount = exampleStrMatrix.length;
 
+        // PRINT AREA
+        System.out.println("PRINT dadosStr:");
+        String[][] array = exampleStrMatrix;
+        for (String[] row : array) {
+            for (String cell : row) {
+                System.out.print(cell + "\t");
+            }
+            System.out.println();
+            
+        }
+        System.out.println("PRINT nomeVariaveis:");
+        for (String row : variableNames) {
+            System.out.print(row + "\t");
+            System.out.println();
+        }
+        // END PRINT AREA
+
         return exampleStrMatrix;
     }
 
     private int[][] convertExamplesFromStrToInt(String[][] examplesStr){
-        int numeroItens = 0;
+        int itemCount = 0;
                 
-        //Capturando os valores distintos de cada atributo
-        ArrayList<HashSet<String>> valoresDistintosAtributos = new ArrayList<>(); //Amazena os valores distintos de cada atributo em um linha
-        
+        @SuppressWarnings("unchecked")
+        HashSet<String>[] distinctAttributeValues = new HashSet[this.attributeCount]; // stores the distinct values of each attribute
+        HashSet<String> distinctValues; // stores distinct values of a single attribute
+
         for(int i = 0; i < this.attributeCount; i++){
-            HashSet<String> valoresDistintosAtributo = new HashSet<>(); //Armazena valores distintos de apenas um atributo. Criar HashSet para armezenar valores distintos de um atributo. Não admite valores repetidos!
+            distinctValues = new HashSet<>();
             for(int j = 0; j < this.exampleCount; j++){
-                valoresDistintosAtributo.add(examplesStr[j][i]); //Coleção não admite valores repetidos a baixo custo computacional.
+                distinctValues.add(examplesStr[j][i]);
             }
-            numeroItens += valoresDistintosAtributo.size();
+            itemCount += distinctValues.size();
             
-            valoresDistintosAtributos.add(valoresDistintosAtributo); //Adiciona lista de valores distintos do atributo de índice i na posição i do atributo atributosEvalores
+            distinctAttributeValues[i] = distinctValues; //Adiciona lista de valores distintos do atributo de índice i na posição i do atributo atributosEvalores
         }
         
-        //Gera 4 arrays para armazenar o universo deatributos e valores no formato original (String) e mapeado para inteiro.
-        String[] itemAtributoStr = new String[numeroItens];
-        String[] itemValorStr = new String[numeroItens];
-        int[] itemAtributo = new int[numeroItens];
-        int[] itemValor = new int[numeroItens];
+        // creates 2 arrays to store attributes and values in their original format (String)
+        String[] itemAtributoStr = new String[itemCount];
+        String[] itemValorStr = new String[itemCount];
+        // creates another 2 arrays to store attributes and values mapped to integer values
+        int[] itemAtributo = new int[itemCount];
+        int[] itemValor = new int[itemCount];
             
-        //Carrega arrays com universos de itens com valores reais e respectivos inteiros mapeados
-        int[][] examplesInt = new int[this.exampleCount][this.attributeCount]; //dados no formato inteiro: mais rápido compararinteiros que strings
+        int[][] examplesInt = new int[this.exampleCount][this.attributeCount]; // matrix of examples in integer format
         int indiceItem = 0; //Indice vai de zero ao número de itens total
-        for(int indiceAtributo = 0; indiceAtributo < valoresDistintosAtributos.size(); indiceAtributo++){
-            Iterator valoresDistintosAtributoIterator = valoresDistintosAtributos.get(indiceAtributo).iterator(); //Capturando valores distintos do atributo de indice i
+        for(int indiceAtributo = 0; indiceAtributo < this.attributeCount; indiceAtributo++){
+            Iterator valoresDistintosAtributoIterator = distinctAttributeValues[indiceAtributo].iterator(); //Capturando valores distintos do atributo de indice i
             int indiceValor = 0; //vai mapear um inteiro distinto para cada valor distinto de cada variável
             
-            //Para cada atributo: 
-            //Atribui inteiro para atributo e a cada valor do atributo.  
-            //Realizar mapeamento na matriz de dados no formato inteiro
             while(valoresDistintosAtributoIterator.hasNext()){
                 itemAtributoStr[indiceItem] = this.variableNames[indiceAtributo]; //
                 itemValorStr[indiceItem] = (String)valoresDistintosAtributoIterator.next();
-
-                // if(isNumber(D.itemValorStr[indiceItem])){
-                //     D.numericAttributes.add(indiceAtributo);
-                // }
-
                 itemAtributo[indiceItem] = indiceAtributo;
                 itemValor[indiceItem] = indiceValor;               
                 
@@ -107,29 +116,37 @@ public class D {
             }     
         } 
 
-        this.items = new int[numeroItens];
-        for(int l = 0; l < numeroItens; l++){
+        this.items = new int[itemCount];
+        for(int l = 0; l < itemCount; l++){
             this.items[l] = l;
         }
-        // Print Items
-        for(int n = 0; n < numeroItens; n++){
-            System.out.print(this.items[n] + "\t");
+        // PRINT AREA
+        System.out.println("PRINT itemValor");
+        for (int cell : itemValor) {
+            System.out.print(cell + "\t");
         }
-        // End Print Items
+
+        System.out.println("\nPRINT dadosInt");
+        int[][] array = examplesInt;
+        for (int[] row : array) {
+            for (int cell : row) {
+                System.out.print(cell + "\t");
+            }
+            System.out.println();
+        }
+        // END PRINT AREA
         return examplesInt;
     }
 
     private void generateDpAndDn(String[][] examplesStr, int[][] examplesInt, String targetValue){
-        //Capturar número de exemplo positivos (y="p") e negativos (y="n")
+
         int labelIndex = this.variableNames.length - 1;
-        int attributeCount = this.variableNames.length - 1;
-        int examplesCount = examplesStr.length;
 
         //Counting the number of positive and negative examples
         int positiveExamplesCount = 0;
         int negativeExamplesCount = 0;
         String label;
-        for(int i = 0; i < examplesCount; i++){
+        for(int i = 0; i < this.exampleCount; i++){
             label = examplesStr[i][labelIndex];
             if(label.equals(targetValue)){
                 positiveExamplesCount++;
@@ -138,27 +155,42 @@ public class D {
             }
         }
         
-        //inicializando Dp e Dn
-        this.dp = new int[positiveExamplesCount][attributeCount];
-        this.dn = new int[negativeExamplesCount][attributeCount];
+        // initializing Dp e Dn
+        this.dp = new int[positiveExamplesCount][this.attributeCount];
+        this.dn = new int[negativeExamplesCount][this.attributeCount];
         
         int indiceDp = 0;
         int indiceDn = 0;
-        for(int i = 0; i < examplesCount; i++){
+        for(int i = 0; i < this.exampleCount; i++){
             label = examplesStr[i][labelIndex];
     
             if(label.equals(targetValue)){
-                for(int j = 0; j < attributeCount; j++){
-                    dp[indiceDp][j] = examplesInt[i][j];
-                }
+                dp[indiceDp] = examplesInt[i];
                 indiceDp++;
             }else{
-                for(int j = 0; j < attributeCount; j++){
-                    dn[indiceDn][j] = examplesInt[i][j];
-                }
+                dn[indiceDn] = examplesInt[i];
                 indiceDn++;            
             }
         }
+        // PRINT AREA
+        System.out.println("PRINT Dp");
+        int[][] array = dp;
+        for (int[] row : array) {
+            for (int cell : row) {
+                System.out.print(cell + "\t");
+            }
+            System.out.println();
+        }
+
+        System.out.println("PRINT Dn");
+        array = dn;
+        for (int[] row : array) {
+            for (int cell : row) {
+                System.out.print(cell + "\t");
+            }
+            System.out.println();
+        }
+        // END PRINT AREA
     }
 
 
