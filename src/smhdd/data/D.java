@@ -193,6 +193,7 @@ public class D {
         // END PRINT AREA
     }
 
+    // Get methods
 
     public String getName(){
         return this.name;
@@ -208,6 +209,31 @@ public class D {
 
     public int getExampleCount(){
         return this.exampleCount;
+    }
+
+
+    // Auxiliary Functions
+
+    public static boolean isNumber(String str) {
+        if (str == null || str.isEmpty()) return false;
+
+        int len = str.length();
+        boolean hasDot = false, hasDigit = false;
+
+        for (int i = 0; i < len; i++) {
+            char ch = str.charAt(i);
+
+            if (ch >= '0' && ch <= '9') {
+                hasDigit = true; // At least one digit must be present
+            } else if (ch == '.' && !hasDot) {
+                hasDot = true; // Only one dot allowed
+            } else if (i == 0 && ch == '-') {
+                // Allow leading negative sign, but only at index 0
+            } else {
+                return false; // If any other character appears, it's not a number
+            }
+        }
+        return hasDigit; // Must contain at least one digit
     }
 
 }
