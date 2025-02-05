@@ -19,8 +19,11 @@ public class D {
     private int[][] dn; // negative examples
 
     // Counters
+    private int itemCount;
     private int attributeCount;
     private int exampleCount;
+    private int positiveExampleCount;
+    private int negativeExampleCount;
 
     public D(String path, String delimiter) throws IOException{
         String[][] examplesStr = this.loadFile(path, delimiter);
@@ -70,7 +73,7 @@ public class D {
     }
 
     private int[][] convertExamplesFromStrToInt(String[][] examplesStr){
-        int itemCount = 0;
+        this.itemCount = 0;
                 
         @SuppressWarnings("unchecked")
         HashSet<String>[] distinctAttributeValues = new HashSet[this.attributeCount]; // stores the distinct values of each attribute
@@ -81,7 +84,7 @@ public class D {
             for(int j = 0; j < this.exampleCount; j++){
                 distinctValues.add(examplesStr[j][i]);
             }
-            itemCount += distinctValues.size();
+            this.itemCount += distinctValues.size();
             
             distinctAttributeValues[i] = distinctValues; //Adiciona lista de valores distintos do atributo de índice i na posição i do atributo atributosEvalores
         }
@@ -143,21 +146,21 @@ public class D {
         int labelIndex = this.variableNames.length - 1;
 
         //Counting the number of positive and negative examples
-        int positiveExamplesCount = 0;
-        int negativeExamplesCount = 0;
+        this.positiveExampleCount = 0;
+        this.negativeExampleCount = 0;
         String label;
         for(int i = 0; i < this.exampleCount; i++){
             label = examplesStr[i][labelIndex];
             if(label.equals(targetValue)){
-                positiveExamplesCount++;
+                this.positiveExampleCount++;
             }else{
-                negativeExamplesCount++;
+                this.negativeExampleCount++;
             }
         }
         
         // initializing Dp e Dn
-        this.dp = new int[positiveExamplesCount][this.attributeCount];
-        this.dn = new int[negativeExamplesCount][this.attributeCount];
+        this.dp = new int[this.positiveExampleCount][this.attributeCount];
+        this.dn = new int[this.negativeExampleCount][this.attributeCount];
         
         int indiceDp = 0;
         int indiceDn = 0;
@@ -193,47 +196,27 @@ public class D {
         // END PRINT AREA
     }
 
-    // Get methods
-
+    // GETs
     public String getName(){
         return this.name;
     }
-
     public String[] getVariableNames(){
         return this.variableNames;
     }
-
     public int getAttributeCount(){
         return this.attributeCount;
     }
-
     public int getExampleCount(){
         return this.exampleCount;
     }
-
-
-    // Auxiliary Functions
-
-    public static boolean isNumber(String str) {
-        if (str == null || str.isEmpty()) return false;
-
-        int len = str.length();
-        boolean hasDot = false, hasDigit = false;
-
-        for (int i = 0; i < len; i++) {
-            char ch = str.charAt(i);
-
-            if (ch >= '0' && ch <= '9') {
-                hasDigit = true; // At least one digit must be present
-            } else if (ch == '.' && !hasDot) {
-                hasDot = true; // Only one dot allowed
-            } else if (i == 0 && ch == '-') {
-                // Allow leading negative sign, but only at index 0
-            } else {
-                return false; // If any other character appears, it's not a number
-            }
-        }
-        return hasDigit; // Must contain at least one digit
+    public int getPositiveExampleCount(){
+        return this.positiveExampleCount;
+    }
+    public int getNegativeExampleCount(){
+        return this.negativeExampleCount;
+    }
+    public int getItemCount(){
+        return this.itemCount;
     }
 
 }
