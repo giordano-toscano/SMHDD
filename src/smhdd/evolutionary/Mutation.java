@@ -1,5 +1,9 @@
 package smhdd.evolutionary;
 
-public class Mutation {
+public final class Mutation {
+    
+    private Mutation(){
+        // Private constructor to prevent instantiation
+    }
 
 }
