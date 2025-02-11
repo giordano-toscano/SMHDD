@@ -119,6 +119,17 @@ public class Pattern implements Comparable<Pattern> {
         return false;        
     }
 
+    @Override
+    public String toString(){
+        String result = "Pattern(items={";
+        for(Integer e : this.items){
+            result = result + e + ",";
+        }
+        result = result + "}"+", quality="+this.quality+")";
+        return result;
+
+    }
+
     // Comparations
     @Override
     public int compareTo(Pattern p) {

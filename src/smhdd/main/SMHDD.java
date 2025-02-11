@@ -8,7 +8,6 @@ import smhdd.data.D;
 import smhdd.data.Pattern;
 import smhdd.evolutionary.Evaluation;
 import smhdd.evolutionary.Initialization;
-import smhdd.evolutionary.Selection;
 
 public class SMHDD {
 
@@ -51,7 +50,7 @@ public class SMHDD {
 
 
             long t0 = System.currentTimeMillis(); //Initial time
-            //Pattern[] p = SMHDD.run(dataset, k);
+            Pattern[] p = SMHDD.run(dataset, k);
             double execution_time = (System.currentTimeMillis() - t0)/1000.0; // Total execution time 
                 
     
@@ -85,7 +84,7 @@ public class SMHDD {
         }
         
         //Inicializa garantindo que P maior que Pk sempre! em bases pequenas isso nem sempre ocorre
-        Pattern[] Paux = Initialization.dimension1(dataset); //P recebe população inicial
+        Pattern[] Paux = Initialization.dimension1(dataset); //P recebe população inicial (PRECISA SER AVALIADA !!!!!!!!!!!!)
         if(Paux.length < k){
             P = new Pattern[k];            
             for(int i = 0; i < k; i++){
@@ -101,7 +100,12 @@ public class SMHDD {
 
         Arrays.sort(P);
 
-        Selection.savingRelevatPatterns(Pk, P);
+        System.out.println("\nPRINT examplesList");
+        for (Pattern row : P) {
+            System.out.println(row);
+        }
+
+        //Selection.savingRelevantPatterns(Pk, P);
         
        
         return Pk;

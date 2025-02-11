@@ -14,8 +14,6 @@ public class D {
 
     private String targetValue = "p";
     private String[] variableNames; 
-    private int[][] dp; // positive examples
-    private int[][] dn; // negative examples
     private Example.Node[][] examplesTransposed;
     private Example[] exampleLists;
     private byte[] variableTypes;
