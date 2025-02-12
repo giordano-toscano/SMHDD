@@ -51,19 +51,7 @@ public class SMHDD {
 
             long t0 = System.currentTimeMillis(); //Initial time
             Pattern[] p = SMHDD.run(dataset, k);
-            double execution_time = (System.currentTimeMillis() - t0)/1000.0; // Total execution time 
-                
-    
-
-            // System.err.println("TESTE NODE: ");
-            // System.err.println("TESTE NODE: ");
-            // Item<?>[] array = new Item[10];
-            // array[0] = new Item<Integer>(1, 2);
-            // array[1] = new Item<Integer[]>(1, new Integer[]{11, 12});
-            // System.err.println(array[1].getValue().getClass().getSimpleName());            
-
-            // .getClass().getSimpleName());
-
+            double execution_time = (System.currentTimeMillis() - t0)/1000.0; // Total execution time          
 
         } catch (IOException ex) {
         }

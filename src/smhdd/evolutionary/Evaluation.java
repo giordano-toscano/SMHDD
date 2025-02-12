@@ -24,9 +24,10 @@ public final class Evaluation {
 
 
     public void evaluatePattern(Pattern p, D dataset){
-                 
-        boolean[] positiveCoverageArray = Evaluation.vetorResultantePositivoAND(p.getItems()); //Saber se somina ou é dominado. Isso ajuda!
-        boolean[] negativeCoverageArray = Evaluation.vetorResultanteNegativoAND(p.getItems()); //Saber se somina ou é dominado. Isso ajuda!
+
+        boolean[] negativeCoverageArray = Evaluation.getPositiveAndNegativeCoverageArrays(p.getItems(), dataset)[0];      
+        boolean[] positiveCoverageArray = Evaluation.getPositiveAndNegativeCoverageArrays(p.getItems(), dataset)[1]; //Saber se somina ou é dominado. Isso ajuda!
+    
        
         this.TP = Avaliador.TP(this.vrP);
         this.FP = Avaliador.FP(this.vrN);
@@ -45,14 +46,44 @@ public final class Evaluation {
         Pattern.numeroIndividuosGerados++;
     }
 
-    public static boolean[] getPositiveAndNegativeCoverageArrays(HashSet<Integer> itens){
-        boolean[] vetorResultantePositivo = new boolean[D.numeroExemplosPositivo];
-        
-        for(int i = 0; i < D.numeroExemplosPositivo; i++){            
-            vetorResultantePositivo[i] = Avaliador.patternContemplaExemploAND(itens, D.Dp[i]);            
+    public static boolean[][]  getPositiveAndNegativeCoverageArrays(HashSet<Integer> itens, D dataset){
+        int exampleCount = dataset.getExampleCount();
+        Example[] examples = dataset.getExampleLists();
+        boolean[] positiveCoverageArray = new boolean[exampleCount];
+        boolean[] negativeCoverageArray = new boolean[exampleCount];
+
+        for(int i = 0; i < dataset.getExampleCount(); i++){    
+            Example example = examples[i];        
+            boolean isCovered = Evaluation.patternContemplaExemploAND(itens, example);  
+            if(isCovered && example.getLabel())
+                positiveCoverageArray[i] = true;
+            else
+                negativeCoverageArray[i] = true;
+                      
         }      
-        
-        return vetorResultantePositivo;
+        return new boolean[][]{negativeCoverageArray, positiveCoverageArray};
+    }
+
+    private static boolean patternContemplaExemploAND(HashSet<Integer> items, Example exemplo){
+        //System.out.println("### Novo Exemplo ###");
+        Iterator iterator = items.iterator();
+        while(iterator.hasNext()){
+            int item = (int)iterator.next();
+            int itemAtributo = D.itemAtributo[item];
+            int itemValor = D.itemValor[item];
+
+
+            // System.out.println("D.itemAtributo: "+ D.itemAtributo[item]);
+            // System.out.println("D.itemValor: "+ D.itemValor[item]);
+            // System.out.println("D.itemAtributoStr: "+ D.itemAtributoStr[item]);
+            // System.out.println("D.itemValorStr: "+ D.itemValorStr[item]);
+            // System.out.println("D.itemValorStr: "+ D.numericAttributes.contains(D.itemAtributo[item]));
+            if(exemplo[itemAtributo] != itemValor){
+
+                return false;                    
+            } 
+        }       
+        return true; 
     }
 
     private static int countPositivesAndNegatives(HashSet<Integer> items, D dataset){
@@ -86,28 +117,6 @@ public final class Evaluation {
         
         return vetorResultantePositivo;
     }
-
-    // private static boolean patternContemplaExemploAND(HashSet<Integer> items, int[] exemplo){
-    //     //System.out.println("### Novo Exemplo ###");
-    //     Iterator iterator = items.iterator();
-    //     while(iterator.hasNext()){
-    //         int item = (int)iterator.next();
-    //         int itemAtributo = D.itemAtributo[item];
-    //         int itemValor = D.itemValor[item];
-
-
-    //         // System.out.println("D.itemAtributo: "+ D.itemAtributo[item]);
-    //         // System.out.println("D.itemValor: "+ D.itemValor[item]);
-    //         // System.out.println("D.itemAtributoStr: "+ D.itemAtributoStr[item]);
-    //         // System.out.println("D.itemValorStr: "+ D.itemValorStr[item]);
-    //         // System.out.println("D.itemValorStr: "+ D.numericAttributes.contains(D.itemAtributo[item]));
-    //         if(exemplo[itemAtributo] != itemValor){
-
-    //             return false;                    
-    //         } 
-    //     }       
-    //     return true; 
-    // }
 
         public static double calculateSimilarity(Pattern p1, Pattern p2){
         //REF: A Survey of Binary Similarity and Distance Measures (http://www.iiisci.org/Journal/CV$/sci/pdfs/GS315JG.pdf)

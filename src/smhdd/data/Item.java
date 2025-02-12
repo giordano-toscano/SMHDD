@@ -1,31 +1,15 @@
 package smhdd.data;
 
-public class Item<T> {
-    private int attribute;
-    private T value;
-    public Item(int attribute, T value) {
-        this.value = value;
-        this.attribute = attribute;
+public sealed abstract class Item permits Index, Interval {
+    protected final int index;
+
+    public Item(int index) {
+        this.index = index;
     }
 
-    public Item() {
-       
-        this.attribute = 3;
+    public int getIndex() {
+        return index;
     }
 
-    public T getValue() {
-        return this.value;
-    }
-
-    public void setData(T value) {
-        this.value = value;
-    }
-
-    public int getAttribute() {
-        return this.attribute;
-    }
-
-    public void setAttribute(int attribute) {
-        this.attribute = attribute;
-    }
+    public abstract boolean contains(int value);
 }

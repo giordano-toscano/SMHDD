@@ -44,7 +44,7 @@ public final class Selection {
                             
                             //filhos de p_Pk podem ser adicionado a Pk.
                             if(p_Pk.getSimilars() != null){
-                                Selection.savingRelevatPatterns(pk, p_Pk.getSimilars());
+                                Selection.savingRelevantPatterns(pk, p_Pk.getSimilars());
                             }                            
                             Arrays.sort(pk);
                             novosk++;
