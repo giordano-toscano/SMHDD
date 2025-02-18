@@ -1,15 +1,15 @@
 package smhdd.data;
 
 public sealed abstract class Item permits Index, Interval {
-    protected final int index;
+    protected final int attributeIndex;
 
     public Item(int index) {
-        this.index = index;
+        this.attributeIndex = index;
     }
 
-    public int getIndex() {
-        return index;
+    public int getAttributeIndex() {
+        return this.attributeIndex;
     }
 
-    public abstract boolean contains(int value);
+    public abstract boolean contains(double value);
 }

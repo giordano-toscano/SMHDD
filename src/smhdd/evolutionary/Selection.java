@@ -1,6 +1,7 @@
 package smhdd.evolutionary;
 
 import java.util.Arrays;
+import smhdd.data.D;
 import smhdd.data.Pattern;
 
 public final class Selection {
@@ -9,7 +10,7 @@ public final class Selection {
         // Private constructor to prevent instantiation
     }
 
-    public static int savingRelevantPatterns(Pattern[] pk, Pattern[] pAsterisk){
+    public static int savingRelevantPatterns(Pattern[] pk, Pattern[] pAsterisk, D dataset){
         int novosk = 0;
         double similaridade;
         for( int i = 0; i < pAsterisk.length && (pAsterisk[i].getQuality() > pk[pk.length-1].getQuality()); i++){
@@ -23,7 +24,7 @@ public final class Selection {
             for(int j = 0; j < pk.length; j++){
                 Pattern p_Pk = pk[j];
                 //double similaridade = SELECAO.similaridadeDPpositivo(p_PAsterisco, p_Pk);
-                similaridade = Evaluation.calculateSimilarity(p_Pk, p_PAsterisco);
+                similaridade = Evaluation.calculateSimilarity(p_Pk, p_PAsterisco, dataset);
                 if(similaridade >= Evaluation.getMinSimilarity()){// Houve similaridade
                     //Se eles tiverem os mesmos itens, descartar! (1)
                     if(p_PAsterisco.isEqualTo(p_Pk)){
@@ -44,7 +45,7 @@ public final class Selection {
                             
                             //filhos de p_Pk podem ser adicionado a Pk.
                             if(p_Pk.getSimilars() != null){
-                                Selection.savingRelevantPatterns(pk, p_Pk.getSimilars());
+                                Selection.savingRelevantPatterns(pk, p_Pk.getSimilars(), dataset);
                             }                            
                             Arrays.sort(pk);
                             novosk++;

@@ -8,13 +8,14 @@ import smhdd.data.D;
 import smhdd.data.Pattern;
 import smhdd.evolutionary.Evaluation;
 import smhdd.evolutionary.Initialization;
+import smhdd.evolutionary.Selection;
 
 public class SMHDD {
 
     public static void main(String[] args){
         try {
             String directory = "datasets/";
-            String file = "teste_dataset.csv";
+            String file = "toy_example_en_US.csv";
             String filepath = directory+file;
 
             Const.random = new Random(Const.SEEDS[0]); 
@@ -30,11 +31,11 @@ public class SMHDD {
             // setting threshold for determining when two subgroups are considered similar to each other
             Evaluation.setMinSimilarity(0.90f); 
             // setting the type of each attribute
-            byte[] attributeTypes = {Const.TYPE_NUMERIC, Const.TYPE_STRING};
-            
+            byte[] attributeTypes = {Const.TYPE_CATEGORICAL, Const.TYPE_CATEGORICAL, Const.TYPE_NUMERICAL};
+            D.setVariableTypes(attributeTypes);
+
             System.out.println("Loading data set...");
             D dataset = new D(filepath, ",");
-            dataset.setVariableTypes(attributeTypes);
             
             // displaying dataset info
             System.out.println(
@@ -63,40 +64,49 @@ public class SMHDD {
 
     public static Pattern[] run(D dataset, int k){
         
-        Pattern[] Pk = new Pattern[k];                
-        Pattern[] P = null;
+        Pattern[] topK = new Pattern[k];                
+        Pattern[] population = null;
         
         //Inicializa Pk com indivíduos vazios
-        for(int i = 0; i < Pk.length;i++){
-            Pk[i] = new Pattern(new HashSet<>());
+        for(int i = 0; i < topK.length;i++){
+            topK[i] = new Pattern(new HashSet<>());
         }
         
         //Inicializa garantindo que P maior que Pk sempre! em bases pequenas isso nem sempre ocorre
-        Pattern[] Paux = Initialization.dimension1(dataset); //P recebe população inicial (PRECISA SER AVALIADA !!!!!!!!!!!!)
-        if(Paux.length < k){
-            P = new Pattern[k];            
+        Pattern[] populationAux = Initialization.dimension1(dataset); //P recebe população inicial (PRECISA SER AVALIADA !!!!!!!!!!!!)
+        if(populationAux.length < k){
+            population = new Pattern[k];            
             for(int i = 0; i < k; i++){
-                if(i < Paux.length){
-                    P[i] = Paux[i];
-                }else{
-                    P[i] = Paux[Const.random.nextInt(Paux.length-1)];
-                }                
+                if(i < populationAux.length)
+                    population[i] = populationAux[i];
+                else
+                    population[i] = populationAux[Const.random.nextInt(populationAux.length-1)];                
             }                
         }else{
-            P = Paux;
+            population = populationAux;
         }      
-
-        Arrays.sort(P);
+        Evaluation.evaluatePopulation(population, dataset);
+        
+        Arrays.sort(population);
 
         System.out.println("\nPRINT examplesList");
-        for (Pattern row : P) {
+        for (Pattern row : population) {
             System.out.println(row);
         }
 
-        //Selection.savingRelevantPatterns(Pk, P);
+        Selection.savingRelevantPatterns(topK, population, dataset);
+
+        int numeroGeracoesSemMelhoraPk = 0;
+        int indiceGeracoes = 1;
+        
+        //Laço do AG
+        Pattern[] Pnovo = null;
+        Pattern[] PAsterisco = null;
+        
+        int tamanhoPopulacao = population.length;
         
        
-        return Pk;
+        return topK;
     }
 
 }

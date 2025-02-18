@@ -4,7 +4,7 @@ public class Example {
 
     private Node tail;
     private boolean label;
-
+    
     public static class Node implements Comparable<Node> {
         double value;
         Node next;

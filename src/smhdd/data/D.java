@@ -16,12 +16,12 @@ public class D {
     private String[] variableNames; 
     private Example.Node[][] examplesTransposed;
     private Example[] exampleLists;
-    private byte[] variableTypes;
+    private static byte[] variableTypes;
 
     // Items
     private int[] items;
     private String[] itemAttributesStr;
-    private String[] itemValuesStr; 
+    private Object[] itemValuesObj; 
     private int[] itemAttributesInt; 
     private int[] itemValuesInt; 
 
@@ -66,33 +66,32 @@ public class D {
         this.itemCount = 0;
                 
         @SuppressWarnings("unchecked")
-        HashSet<String>[] distinctAttributeValues = new HashSet[this.attributeCount]; // stores the distinct values of each attribute
+        HashSet<Object>[] distinctAttributeValues = new HashSet[this.attributeCount]; // stores the distinct values of each attribute
 
         for(int i = 0; i < this.attributeCount; i++){
-            HashSet<String> distinctValuesOneAttribute = new HashSet<>();            // stores distinct values of a single attribute
-            for(int j = 0; j < this.exampleCount; j++){
-                distinctValuesOneAttribute.add(examplesStr[j][i]);
-            }
-            this.itemCount += distinctValuesOneAttribute.size();
-            // adds list of distinct values of attribute i in the i-th position of the "distinctAttributeValues" array
-            distinctAttributeValues[i] = distinctValuesOneAttribute; 
+            HashSet<Object> distinctValuesSingleAttribute = new HashSet<>();         // stores distinct values of a single attribute
+            if(D.variableTypes[i] == Const.TYPE_CATEGORICAL) // categorical attribute
+                distinctValuesSingleAttribute.addAll(this.gatherCategoricalColumnValues(examplesStr, i));
+            else                                            // numerical attribute
+                distinctValuesSingleAttribute.addAll(this.transformNumericalColumnIntoIntervals(examplesStr, i));
+            this.itemCount += distinctValuesSingleAttribute.size();
+            distinctAttributeValues[i] = distinctValuesSingleAttribute; // adds list of distinct values of attribute i in the i-th position of the "distinctAttributeValues" array
         }
         
         // creates 2 arrays to store attributes and values in their original format (String)
         this.itemAttributesStr = new String[itemCount];
-        this.itemValuesStr = new String[itemCount];
+        this.itemValuesObj = new Object[itemCount];
         // creates another 2 arrays to store attributes and values mapped to integer values
         this.itemAttributesInt = new int[itemCount];
         this.itemValuesInt = new int[itemCount];
 
         int itemIndex = 0;
-        HashSet<String> distinctValues;
         for(int attributeIndex = 0; attributeIndex < this.attributeCount; attributeIndex++){
-            distinctValues = distinctAttributeValues[attributeIndex];
+            HashSet<Object> distinctValues = distinctAttributeValues[attributeIndex];
             int valueIndex = 0;
-            for(String valueStr : distinctValues){
+            for(Object valueStr : distinctValues){
                 itemAttributesStr[itemIndex] = this.variableNames[attributeIndex]; 
-                itemValuesStr[itemIndex] = valueStr;
+                itemValuesObj[itemIndex] = valueStr;
                 itemAttributesInt[itemIndex] = attributeIndex;
                 itemValuesInt[itemIndex] = valueIndex;
 
@@ -106,15 +105,37 @@ public class D {
         }
     }
 
+    private List<double[]> transformNumericalColumnIntoIntervals(String[][] examplesStr, int attributeIndex){
+        String[] array = new String[this.exampleCount]; 
+        for(int j = 0; j < this.exampleCount; j++)
+            array[j] = examplesStr[j][attributeIndex];
+        double[][] result = D.equalFrequencyBins(array, 3);
+        List<double[]> list = new ArrayList<>();
+        list.addAll(Arrays.asList(result));
+        return list;
+    }
+
+    private List<String> gatherCategoricalColumnValues(String[][] examplesStr, int attributeIndex){
+        List<String> list = new ArrayList<>();
+        for(int j = 0; j < this.exampleCount; j++)
+            list.add(examplesStr[j][attributeIndex]);
+        return list;
+    }
+
     private double[][] convertExamplesFromStrToDouble(String[][] examplesStr){
 
         double[][] examplesDoubleMatrix = new double[this.exampleCount][this.attributeCount]; // matrix of examples in integer format
         int itemIndex = 0;
         for (int attributeIndex : this.itemAttributesInt){
-            for(int i = 0; i < this.exampleCount; i++){ 
-                if(examplesStr[i][attributeIndex].equals(this.itemValuesStr[itemIndex])){
-                    examplesDoubleMatrix[i][attributeIndex] = this.itemValuesInt[itemIndex];
+            if(D.variableTypes[attributeIndex] == Const.TYPE_CATEGORICAL){ // categorical attribute
+                for(int i = 0; i < this.exampleCount; i++){ 
+                    if(examplesStr[i][attributeIndex].equals(this.itemValuesObj[itemIndex])){
+                        examplesDoubleMatrix[i][attributeIndex] = this.itemValuesInt[itemIndex];
+                    }
                 }
+            }else{ // numerical attribute
+                for(int i = 0; i < this.exampleCount; i++)
+                    examplesDoubleMatrix[i][attributeIndex] = Double.parseDouble(examplesStr[i][attributeIndex]);
             }
             itemIndex++;
         }
@@ -156,7 +177,7 @@ public class D {
         }
     }
 
-    // Utils
+    // Utils //
     public static boolean isNumber(String str) {
         if (str == null || str.isEmpty()) return false;
 
@@ -188,6 +209,72 @@ public class D {
             }
             System.out.println();
         }
+    }
+
+    // DeepSeek
+    public static double[][] equalFrequencyBins(double[] sortedArray, int numBins) {
+        if (sortedArray == null || sortedArray.length == 0 || numBins <= 0) {
+            throw new IllegalArgumentException("Invalid input parameters.");
+        }
+
+        int n = sortedArray.length;
+        int binSize = n / numBins;
+        int remainder = n % numBins;
+
+        double[][] bins = new double[numBins][2];
+        int startIndex = 0;
+
+        for (int i = 0; i < numBins; i++) {
+            int endIndex = startIndex + binSize - 1;
+            if (remainder > 0) {
+                endIndex++;
+                remainder--;
+            }
+
+            bins[i][0] = sortedArray[startIndex];
+            bins[i][1] = sortedArray[endIndex];
+
+            startIndex = endIndex + 1;
+        }
+
+        return bins;
+    }
+
+    public static double[][] equalFrequencyBins(String[] stringArray, int numBins) {
+
+        if (stringArray == null) {
+            throw new IllegalArgumentException("Input array cannot be null.");
+        }
+
+        // Step 1: Convert String array to double array
+        double[] doubleArray = new double[stringArray.length];
+        for (int i = 0; i < stringArray.length; i++) {
+            doubleArray[i] = Double.parseDouble(stringArray[i]);
+        }
+
+        // Step 2: Sort the double array
+        Arrays.sort(doubleArray);
+
+        return equalFrequencyBins(doubleArray, numBins);
+    }
+
+    // ChatGPT
+    public static double[][] equalFrequencyDiscretization(double[] sortedArray, int numBins) {
+        int n = sortedArray.length;
+        if (n == 0 || numBins <= 0) throw new IllegalArgumentException("Invalid input parameters");
+
+        double[][] intervals = new double[numBins][2];
+        int binSize = n / numBins;
+        int remainder = n % numBins; // Handle cases where n is not exactly divisible
+
+        int index = 0;
+        for (int i = 0; i < numBins; i++) {
+            int nextIndex = index + binSize + (i < remainder ? 1 : 0) - 1;
+            intervals[i][0] = sortedArray[index]; // Lower bound
+            intervals[i][1] = sortedArray[nextIndex]; // Upper bound
+            index = nextIndex + 1;
+        }
+        return intervals;
     }
 
     // GETs
@@ -243,20 +330,26 @@ public class D {
         return this.itemAttributesStr;
     }
 
-    public String[] getItemValuesStr() {
-        return this.itemValuesStr;
+    public Object[] getItemValuesObj() {
+        return this.itemValuesObj;
+    }
+
+    public static byte[] getVariableTypes(){
+        return D.variableTypes;
     }
 
     // SETs
-    public void setVariableTypes(byte[] types){
-        this.variableTypes = this.variableTypes == null ? types : this.variableTypes;
+    public static void setVariableTypes(byte[] types){
+        D.variableTypes = D.variableTypes == null ? types : D.variableTypes;
     }
 
     // Main method
     public static void main(String[] args) throws IOException {
         String directory = "datasets/";
-        String file = "teste_dataset.csv";
+        String file = "toy_example_en_US.csv";
         String filepath = directory+file;
+        byte[] attributeTypes = {Const.TYPE_CATEGORICAL, Const.TYPE_CATEGORICAL, Const.TYPE_NUMERICAL};
+        D.setVariableTypes(attributeTypes);
         D dataset  = new D(filepath, ",");
 
         System.out.println("PRINT nomeVariaveis:");
@@ -264,8 +357,8 @@ public class D {
             System.out.print(row + "\t");
             System.out.println();
         }
-        System.out.println("\nPRINT itemValuesStr");
-        for (String cell : dataset.getItemValuesStr()) {
+        System.out.println("\nPRINT itemValuesObj");
+        for (Object cell : dataset.getItemValuesObj()) {
             System.out.print(cell + "\t");
         }
         System.out.println("\nPRINT itemValuesInt");
@@ -281,7 +374,7 @@ public class D {
             System.out.print(cell + "\t");
         }
 
-        System.out.println("\nBEFORE SORTING");
+        System.out.println("\n\nBEFORE SORTING");
     
         System.out.println("\nPRINT examplesTransposed");
         D.displayExamplesTransposed(dataset.getExamplesTransposed());
@@ -292,7 +385,7 @@ public class D {
         }
 
         System.out.println("\nAFTER SORTING");
-        Arrays.sort(dataset.getExamplesTransposed()[0]);
+        Arrays.sort(dataset.getExamplesTransposed()[2]);
 
         System.out.println("\nPRINT examplesTransposed");
         D.displayExamplesTransposed(dataset.getExamplesTransposed());
