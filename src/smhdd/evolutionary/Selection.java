@@ -10,7 +10,7 @@ public final class Selection {
         // Private constructor to prevent instantiation
     }
 
-    public static int savingRelevantPatterns(Pattern[] pk, Pattern[] pAsterisk, D dataset){
+    public static int saveRelevantPatterns(Pattern[] pk, Pattern[] pAsterisk, D dataset){
         int novosk = 0;
         double similaridade;
         for( int i = 0; i < pAsterisk.length && (pAsterisk[i].getQuality() > pk[pk.length-1].getQuality()); i++){

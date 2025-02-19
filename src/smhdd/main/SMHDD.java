@@ -73,7 +73,7 @@ public class SMHDD {
         }
         
         //Inicializa garantindo que P maior que Pk sempre! em bases pequenas isso nem sempre ocorre
-        Pattern[] populationAux = Initialization.dimension1(dataset); //P recebe população inicial (PRECISA SER AVALIADA !!!!!!!!!!!!)
+        Pattern[] populationAux = Initialization.generateDimension1Patterns(dataset); //P recebe população inicial (PRECISA SER AVALIADA !!!!!!!!!!!!)
         if(populationAux.length < k){
             population = new Pattern[k];            
             for(int i = 0; i < k; i++){
@@ -94,7 +94,7 @@ public class SMHDD {
             System.out.println(row);
         }
 
-        Selection.savingRelevantPatterns(topK, population, dataset);
+        Selection.saveRelevantPatterns(topK, population, dataset);
 
         int numeroGeracoesSemMelhoraPk = 0;
         int indiceGeracoes = 1;

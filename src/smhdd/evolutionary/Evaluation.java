@@ -204,6 +204,15 @@ public final class Evaluation {
         
     }
 
+    public static double calculateAverageDimension(Pattern[] p, int k){
+        int total = 0;
+        int i = 0;
+        for(; i < k; i++){
+            total += p[i].getItems().size();
+        }
+        return (double)total/(double)i;
+    }
+
     // private static boolean patternContemplaExemploAND(HashSet<Integer> items, Example exemplo){
     //     //System.out.println("### Novo Exemplo ###");
     //     Iterator iterator = items.iterator();
