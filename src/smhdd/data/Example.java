@@ -26,6 +26,9 @@ public class Example {
                 return 0;
             }   
         }
+        public double getValue(){
+            return this.value;
+        }
     }
 
     public void insertNode(Node newNode) {

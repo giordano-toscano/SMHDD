@@ -9,7 +9,7 @@ import smhdd.data.Pattern;
 
 public final class Evaluation {
 
-    private static byte evaluationMetric;
+    private static String evaluationMetric;
     private static byte similarityMeasure;
     private static float minSimilarity;
     
@@ -22,12 +22,12 @@ public final class Evaluation {
             Evaluation.evaluatePattern(pattern, dataset);
         }
     }
+    
     public static void evaluatePattern(Pattern p, D dataset){
         int[] result = Evaluation.getPositiveAndNegativeCount(p, dataset);
-        p.setFP(result[0]);      
-        p.setTP(result[1]);
-    
-        p.setQuality(Evaluation.calculateQuality(p, dataset));
+        int fp = result[0];
+        int tp = result[1];
+        p.setQuality(Evaluation.calculateQuality(fp, tp, dataset));
     }
 
     private static int[] getPositiveAndNegativeCount(Pattern p, D dataset){
@@ -41,11 +41,10 @@ public final class Evaluation {
         for(int i = 0; i < exampleCount; i++){    
             Example example = examples[i];        
             boolean isCovered = Evaluation.patternContemplaExemploAND(items, example);  
-            if(isCovered && example.getLabel() == true){
+            if(isCovered && example.getLabel() == true)
                 positiveCount++;
-            }else if(isCovered && example.getLabel() == false){
-                negativeCount++;
-            }     
+            else if(isCovered && example.getLabel() == false)
+                negativeCount++;    
         }      
         return new int[]{negativeCount, positiveCount};
     }
@@ -55,18 +54,16 @@ public final class Evaluation {
         int exampleCount = dataset.getExampleCount();
         Example[] examples = dataset.getExampleLists();
         
-
         boolean[] positiveCoverageArray = new boolean[exampleCount];
         boolean[] negativeCoverageArray = new boolean[exampleCount];
 
         for(int i = 0; i < exampleCount; i++){    
             Example example = examples[i];        
             boolean isCovered = Evaluation.patternContemplaExemploAND(items, example);  
-            if(isCovered && example.getLabel() == true){
+            if(isCovered && example.getLabel() == true)
                 positiveCoverageArray[i] = true;
-            }else if(isCovered && example.getLabel() == false){
+            else if(isCovered && example.getLabel() == false)
                 negativeCoverageArray[i] = true;
-            }
         }      
         return new boolean[][]{negativeCoverageArray, positiveCoverageArray};
     }
@@ -82,16 +79,37 @@ public final class Evaluation {
         return true; 
     }
 
-    private static double calculateQuality(Pattern p, D dataset){
+    // private static double calculateQuality(Pattern p, D dataset){
+    //     double quality = 0.0;
+    //     int tp = p.getTP();
+    //     int fp = p.getFP();
+
+    //     switch(Evaluation.evaluationMetric){
+    //         case Const.METRIC_QG -> quality = Evaluation.calculateQg(tp, fp);
+    //         case Const.METRIC_WRACC -> quality = Evaluation.calculateWRAcc(tp, fp, dataset);
+    //         case Const.METRIC_WRACC_NORMALIZED -> quality = Evaluation.calculateWRAccN(tp, fp, dataset);
+    //         case Const.METRIC_WRACC_OVER_SIZE -> quality = Evaluation.calculateWRAcc(tp, fp, dataset) / p.getItems().size();
+    //         case Const.METRIC_SUB -> quality = Evaluation.calculateSub(tp, fp);
+    //         // case Evaluation.METRICA_AVALIACAO_CHI_QUAD:
+    //         //     quality = Evaluation.chi_quad(tp, fp);
+    //         //     break;
+    //         // case Evaluation.METRICA_AVALIACAO_CHI_QUAD:
+    //         //     quality = Evaluation.chi_quad(tp, fp);
+    //         //     break;
+    //     }
+    //     return quality;
+    // }   
+
+    private static double calculateQuality(int fp, int tp, D dataset){
         double quality = 0.0;
-        int tp = p.getTP();
-        int fp = p.getFP();
+        // int tp = p.getTP();
+        // int fp = p.getFP();
 
         switch(Evaluation.evaluationMetric){
             case Const.METRIC_QG -> quality = Evaluation.calculateQg(tp, fp);
             case Const.METRIC_WRACC -> quality = Evaluation.calculateWRAcc(tp, fp, dataset);
             case Const.METRIC_WRACC_NORMALIZED -> quality = Evaluation.calculateWRAccN(tp, fp, dataset);
-            case Const.METRIC_WRACC_OVER_SIZE -> quality = Evaluation.calculateWRAcc(tp, fp, dataset) / p.getItems().size();
+            //case Const.METRIC_WRACC_OVER_SIZE -> quality = Evaluation.calculateWRAcc(tp, fp, dataset) / p.getItems().size();
             case Const.METRIC_SUB -> quality = Evaluation.calculateSub(tp, fp);
             // case Evaluation.METRICA_AVALIACAO_CHI_QUAD:
             //     quality = Evaluation.chi_quad(tp, fp);
@@ -150,7 +168,7 @@ public final class Evaluation {
         double bothAB = 0.0;
         double neitherAB = 0.0;
         double Acount = 0.0;
-        double Bcount =0.0;
+        double Bcount = 0.0;
 
         boolean[] a, b;
 
@@ -213,31 +231,23 @@ public final class Evaluation {
         return (double)total/(double)i;
     }
 
-    // private static boolean patternContemplaExemploAND(HashSet<Integer> items, Example exemplo){
-    //     //System.out.println("### Novo Exemplo ###");
-    //     Iterator iterator = items.iterator();
-    //     while(iterator.hasNext()){
-    //         int item = (int)iterator.next();
-    //         int itemAtributo = D.itemAtributo[item];
-    //         int itemValor = D.itemValor[item];
+    public static double avaliarMedia(Pattern[] p, int k){
+        double total = 0.0;
+        int i = 0;
+        for(; i < k; i++){
+            total += p[i].getQuality();
+        }
+        return total/(double)i;
+    }
 
-
-    //         // System.out.println("D.itemAtributo: "+ D.itemAtributo[item]);
-    //         // System.out.println("D.itemValor: "+ D.itemValor[item]);
-    //         // System.out.println("D.itemAtributoStr: "+ D.itemAtributoStr[item]);
-    //         // System.out.println("D.itemValorStr: "+ D.itemValorStr[item]);
-    //         // System.out.println("D.itemValorStr: "+ D.numericAttributes.contains(D.itemAtributo[item]));
-    //         if(exemplo[itemAtributo] != itemValor){
-
-    //             return false;                    
-    //         } 
-    //     }       
-    //     return true; 
-    // }
-
-    public static void setEvaluationMetric(byte evaluationMetric) {
+    public static String getEvaluationMetric() {
         // Ensure it's set only once
-        if (Evaluation.evaluationMetric == 0) { // compares to default value
+        return Evaluation.evaluationMetric;
+    }
+
+    public static void setEvaluationMetric(String evaluationMetric) {
+        // Ensure it's set only once
+        if (Evaluation.evaluationMetric == null) { // compares to default value
             Evaluation.evaluationMetric = evaluationMetric;
         }
     }

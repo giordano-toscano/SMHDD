@@ -12,11 +12,12 @@ public class D {
 
     private String name; // dataset name
 
-    private String targetValue = "p";
+    private String targetValue = "\"p\"";
+    //private String targetValue = "p";
     private String[] variableNames; 
     private Example.Node[][] examplesTransposed;
     private Example[] exampleLists;
-    private static byte[] variableTypes;
+    private byte[] attributeTypes;
 
     // Items
     private int[] items;
@@ -58,9 +59,19 @@ public class D {
         // initializing attributes
         this.attributeCount = this.variableNames.length - 1;
         this.exampleCount = exampleStrMatrix.length;
+        this.attributeTypes = this.attributeTypes == null ? detectVariableTypes() : this.attributeTypes;
 
         return exampleStrMatrix;
     }
+
+    private byte[] detectVariableTypes(){
+        byte[] types = new byte[this.variableNames.length-1];
+        for(int i = 0; i < types.length; i++){
+            types[i] = Const.TYPE_CATEGORICAL;
+        }
+        return types;
+    }
+
 
     private void generateItems(String[][] examplesStr){
         this.itemCount = 0;
@@ -70,7 +81,7 @@ public class D {
 
         for(int i = 0; i < this.attributeCount; i++){
             HashSet<Object> distinctValuesSingleAttribute = new HashSet<>();         // stores distinct values of a single attribute
-            if(D.variableTypes[i] == Const.TYPE_CATEGORICAL) // categorical attribute
+            if(this.attributeTypes[i] == Const.TYPE_CATEGORICAL) // categorical attribute
                 distinctValuesSingleAttribute.addAll(this.gatherCategoricalColumnValues(examplesStr, i));
             else                                            // numerical attribute
                 distinctValuesSingleAttribute.addAll(this.transformNumericalColumnIntoIntervals(examplesStr, i));
@@ -100,15 +111,14 @@ public class D {
             }
         }
         this.items = new int[itemCount];
-        for(int l = 0; l < itemCount; l++){
+        for(int l = 0; l < itemCount; l++)
             this.items[l] = l;
-        }
     }
 
     private List<double[]> transformNumericalColumnIntoIntervals(String[][] examplesStr, int attributeIndex){
         String[] array = new String[this.exampleCount]; 
-        for(int j = 0; j < this.exampleCount; j++)
-            array[j] = examplesStr[j][attributeIndex];
+        for(int i = 0; i < this.exampleCount; i++)
+            array[i] = examplesStr[i][attributeIndex];
         double[][] result = D.equalFrequencyBins(array, 3);
         List<double[]> list = new ArrayList<>();
         list.addAll(Arrays.asList(result));
@@ -127,7 +137,7 @@ public class D {
         double[][] examplesDoubleMatrix = new double[this.exampleCount][this.attributeCount]; // matrix of examples in integer format
         int itemIndex = 0;
         for (int attributeIndex : this.itemAttributesInt){
-            if(D.variableTypes[attributeIndex] == Const.TYPE_CATEGORICAL){ // categorical attribute
+            if(this.attributeTypes[attributeIndex] == Const.TYPE_CATEGORICAL){ // categorical attribute
                 for(int i = 0; i < this.exampleCount; i++){ 
                     if(examplesStr[i][attributeIndex].equals(this.itemValuesObj[itemIndex])){
                         examplesDoubleMatrix[i][attributeIndex] = this.itemValuesInt[itemIndex];
@@ -204,11 +214,30 @@ public class D {
         // Iterate over columns first
         for (int col = 0; col < matrix[0].length; col++) {
             // Iterate over rows
-            for (int row = 0; row < matrix.length; row++) {
-                System.out.print(matrix[row][col] + "\t");
+            for (Example.Node[] matrix1 : matrix) {
+                System.out.print(matrix1[col] + "\t");
             }
             System.out.println();
         }
+    }
+
+
+    public static double[][] equalFrequencyBins(String[] stringArray, int numBins) {
+
+        if (stringArray == null) {
+            throw new IllegalArgumentException("Input array cannot be null.");
+        }
+
+        // Step 1: Convert String array to double array
+        double[] doubleArray = new double[stringArray.length];
+        for (int i = 0; i < stringArray.length; i++) {
+            doubleArray[i] = Double.parseDouble(stringArray[i]);
+        }
+
+        // Step 2: Sort the double array
+        Arrays.sort(doubleArray);
+
+        return equalFrequencyBins(doubleArray, numBins);
     }
 
     // DeepSeek
@@ -238,24 +267,6 @@ public class D {
         }
 
         return bins;
-    }
-
-    public static double[][] equalFrequencyBins(String[] stringArray, int numBins) {
-
-        if (stringArray == null) {
-            throw new IllegalArgumentException("Input array cannot be null.");
-        }
-
-        // Step 1: Convert String array to double array
-        double[] doubleArray = new double[stringArray.length];
-        for (int i = 0; i < stringArray.length; i++) {
-            doubleArray[i] = Double.parseDouble(stringArray[i]);
-        }
-
-        // Step 2: Sort the double array
-        Arrays.sort(doubleArray);
-
-        return equalFrequencyBins(doubleArray, numBins);
     }
 
     // ChatGPT
@@ -334,66 +345,66 @@ public class D {
         return this.itemValuesObj;
     }
 
-    public static byte[] getVariableTypes(){
-        return D.variableTypes;
+    public byte[] getAttributeTypes(){
+        return this.attributeTypes;
     }
 
     // SETs
-    public static void setVariableTypes(byte[] types){
-        D.variableTypes = D.variableTypes == null ? types : D.variableTypes;
+    public void setAttributeTypes(byte[] types){
+        this.attributeTypes = this.attributeTypes == null ? types : this.attributeTypes;
     }
 
     // Main method
     public static void main(String[] args) throws IOException {
         String directory = "datasets/";
-        String file = "toy_example_en_US.csv";
+        String file = "ENEM2014_81_NOTA_10k.csv";
         String filepath = directory+file;
-        byte[] attributeTypes = {Const.TYPE_CATEGORICAL, Const.TYPE_CATEGORICAL, Const.TYPE_NUMERICAL};
-        D.setVariableTypes(attributeTypes);
         D dataset  = new D(filepath, ",");
+        //byte[] attributeTypes = {Const.TYPE_CATEGORICAL, Const.TYPE_CATEGORICAL, Const.TYPE_NUMERICAL};
+        //dataset.setAttributeTypes(attributeTypes);
 
         System.out.println("PRINT nomeVariaveis:");
         for (String row : dataset.getVariableNames()) {
             System.out.print(row + "\t");
             System.out.println();
         }
-        System.out.println("\nPRINT itemValuesObj");
-        for (Object cell : dataset.getItemValuesObj()) {
-            System.out.print(cell + "\t");
-        }
-        System.out.println("\nPRINT itemValuesInt");
-        for (int cell : dataset.getItemValuesInt()) {
-            System.out.print(cell + "\t");
-        }
-        System.out.println("\nPRINT itemAtributosStr");
-        for (String cell : dataset.getItemAttributesStr()) {
-            System.out.print(cell + "\t");
-        }
-        System.out.println("\nPRINT itemAtributosInt");
-        for (int cell : dataset.getItemAttributesInt()) {
-            System.out.print(cell + "\t");
-        }
+        // System.out.println("\nPRINT itemValuesObj");
+        // for (Object cell : dataset.getItemValuesObj()) {
+        //     System.out.print(cell + "\t");
+        // }
+        // System.out.println("\nPRINT itemValuesInt");
+        // for (int cell : dataset.getItemValuesInt()) {
+        //     System.out.print(cell + "\t");
+        // }
+        // System.out.println("\nPRINT itemAtributosStr");
+        // for (String cell : dataset.getItemAttributesStr()) {
+        //     System.out.print(cell + "\t");
+        // }
+        // System.out.println("\nPRINT itemAtributosInt");
+        // for (int cell : dataset.getItemAttributesInt()) {
+        //     System.out.print(cell + "\t");
+        // }
 
-        System.out.println("\n\nBEFORE SORTING");
+        // System.out.println("\n\nBEFORE SORTING");
     
-        System.out.println("\nPRINT examplesTransposed");
-        D.displayExamplesTransposed(dataset.getExamplesTransposed());
+        // System.out.println("\nPRINT examplesTransposed");
+        // D.displayExamplesTransposed(dataset.getExamplesTransposed());
 
-        System.out.println("\nPRINT examplesList");
-        for (Example row : dataset.getExampleLists()) {
-            row.display();
-        }
+        // System.out.println("\nPRINT examplesList");
+        // for (Example row : dataset.getExampleLists()) {
+        //     row.display();
+        // }
 
-        System.out.println("\nAFTER SORTING");
-        Arrays.sort(dataset.getExamplesTransposed()[2]);
+        // System.out.println("\nAFTER SORTING");
+        // Arrays.sort(dataset.getExamplesTransposed()[2]);
 
-        System.out.println("\nPRINT examplesTransposed");
-        D.displayExamplesTransposed(dataset.getExamplesTransposed());
+        // System.out.println("\nPRINT examplesTransposed");
+        // D.displayExamplesTransposed(dataset.getExamplesTransposed());
 
-        System.out.println("\nPRINT examplesList");
-        for (Example row : dataset.getExampleLists()) {
-            row.display();
-        }
+        // System.out.println("\nPRINT examplesList");
+        // for (Example row : dataset.getExampleLists()) {
+        //     row.display();
+        // }
 
     }
 

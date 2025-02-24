@@ -10,8 +10,8 @@ public class Pattern implements Comparable<Pattern> {
 
     private HashSet<Item> items;
     private double quality;
-    private int tp; // true positive count
-    private int fp; // false positive count
+    //private int tp; // true positive count
+    //private int fp; // false positive count
     // private boolean[] positiveCoverageArray;
     // private boolean[] negativeCoverageArray;
     private Pattern[] similars;
@@ -55,21 +55,21 @@ public class Pattern implements Comparable<Pattern> {
         this.similars = similars;
     }
 
-    public int getTP() {
-        return this.tp;
-    }
+    // public int getTP() {
+    //     return this.tp;
+    // }
 
-    public void setTP(int tp) {
-        this.tp = tp;
-    }
+    // public void setTP(int tp) {
+    //     this.tp = tp;
+    // }
     
-    public int getFP() {
-        return this.fp;
-    }
+    // public int getFP() {
+    //     return this.fp;
+    // }
 
-    public void setFP(int fp) {
-        this.fp = fp;
-    }
+    // public void setFP(int fp) {
+    //     this.fp = fp;
+    // }
 
     // public boolean[] getPositiveCoverageArray(){
     //     return this.positiveCoverageArray;

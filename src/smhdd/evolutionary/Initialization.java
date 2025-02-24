@@ -19,15 +19,7 @@ public final class Initialization {
         
         for(int i = 0; i < dataset.getItemCount(); i++){
             HashSet<Item> items = new HashSet<>();
-            int attributeIndex = dataset.getItemAttributesInt()[i];
-            Item item;
-            if(D.getVariableTypes()[attributeIndex] == Const.TYPE_CATEGORICAL){
-                int valueIndex = dataset.getItemValuesInt()[i];
-                item = new Index(attributeIndex, valueIndex);
-            }else{
-                double[] interval = (double[]) dataset.getItemValuesObj()[i];
-                item = new Interval(attributeIndex, interval[0], interval[1]);
-            }
+            Item item = Initialization.retrieveItemFromIndex(dataset, i);
             items.add(item);
 
             P0[i] = new Pattern(items);
@@ -35,64 +27,70 @@ public final class Initialization {
         return P0;
     }
 
-    public static Pattern[] initializeUsingTopK(D dataset, int populationSize, Pattern[] Pk){
-        //Ajeitar isso!!!
-        int numeroDimensoes =  (int) Evaluation.calculateAverageDimension(Pk, Pk.length);
-        if(numeroDimensoes < 2){
-            numeroDimensoes = 2;
-        }
-        int item;
-        //População que será retornada        
-        Pattern[] P0 = new Pattern[populationSize];
-        
+    public static Pattern[] initializeUsingTopK(D dataset, int populationSize, Pattern[] topK){
+        int dimensionNumber =  (int) Evaluation.calculateAverageDimension(topK, topK.length);
+        dimensionNumber = dimensionNumber < 2 ? 2 : dimensionNumber;      
+        Pattern[] newPopulation = new Pattern[populationSize];
+        int itemCount = dataset.getItemCount();
+
         //Adicionando aleatoriamente com até numeroDimensoes itens
-        int i = 0;
-        for(; i < 9*populationSize/10; i++){
-            HashSet<Item> itens = new HashSet<Item>();
+        int populationSizePercentage = 9*populationSize/10;
+        for(int i = 0; i < populationSizePercentage; i++){
+            HashSet<Item> items = new HashSet<>();
             
-            while(itens.size() < numeroDimensoes){
-                item = D.itensUtilizados[Const.random.nextInt(D.numeroItensUtilizados)];
-                
-                itens.add(item);
+            while(items.size() < dimensionNumber){
+                int itemIndex = Const.random.nextInt(itemCount);
+                Item item = Initialization.retrieveItemFromIndex(dataset, itemIndex);
+                items.add(item);
             }            
             
-            P0[i] = new Pattern(itens);
+            newPopulation[i] = new Pattern(items);
         }        
-        
         
         //Coletanto todos os itens distintos da população Pk.
-        HashSet<Integer> itensPk = new HashSet<>();
-        for(int n = 0; n < Pk.length; n++){
-            itensPk.addAll(Pk[n].getItens());
-        }
-        int[] itensPkArray = new int[itensPk.size()];
+        HashSet<Item> itemsTopK = new HashSet<>();
+        for (Pattern patternTopK : topK)
+            itemsTopK.addAll(patternTopK.getItems());
+
+        Item[] itemsTopKArray = new Item[itemsTopK.size()];
+        int n = 0;
+        for(Item itemTopK : itemsTopK)
+            itemsTopKArray[n++] = itemTopK;
         
-        Iterator iterator = itensPk.iterator();
-        int n = 0;        
-        while(iterator.hasNext()){
-            itensPkArray[n++] = (int)iterator.next();
-        }
         
-        //Gerando parte da população utilizando os itens presentes em Pk        
-        for(int j = i; j < populationSize; j++){
-            HashSet<Integer> itens = new HashSet<Integer>();
-            
-            while(itens.size() < numeroDimensoes){
-                if(itensPkArray.length > numeroDimensoes){
-                    itens.add(itensPkArray[Const.random.nextInt(itensPkArray.length)]);
+        // generating part of the population using the items present in the top-k         
+        for(int j = populationSizePercentage; j < populationSize; j++){
+            HashSet<Item> items = new HashSet<>();
+    
+            while(items.size() < dimensionNumber){
+                if(itemsTopKArray.length > dimensionNumber){
+                    items.add(itemsTopKArray[Const.random.nextInt(itemsTopKArray.length)]);
                 }else{//Caso especial: existem menos itens nas top-k do que o tamanho exigido para o invíduo             
                     if(Const.random.nextBoolean()){
-                        itens.add(itensPkArray[Const.random.nextInt(itensPkArray.length)]);
+                        items.add(itemsTopKArray[Const.random.nextInt(itemsTopKArray.length)]);
                     }else{
-                        itens.add(D.itensUtilizados[Const.random.nextInt(D.numeroItensUtilizados)]);
+                        int itemIndex = Const.random.nextInt(itemCount);
+                        items.add(Initialization.retrieveItemFromIndex(dataset, itemIndex));
                     }
                 }
-                
-            }
-                  
-            P0[j] = new Pattern(itens);
+            }     
+            newPopulation[j] = new Pattern(items);
         }        
-        return P0;
+        return newPopulation;
+    }
+    
+    // maybe put it in Item class...
+    static Item retrieveItemFromIndex(D dataset, int itemIndex){ 
+        int attributeIndex = dataset.getItemAttributesInt()[itemIndex];
+        Item item;
+        if(dataset.getAttributeTypes()[attributeIndex] == Const.TYPE_CATEGORICAL){
+            int valueIndex = dataset.getItemValuesInt()[itemIndex];
+            item = new Index(attributeIndex, valueIndex);
+        }else{
+            double[] interval = (double[]) dataset.getItemValuesObj()[itemIndex];
+            item = new Interval(attributeIndex, interval[0], interval[1]);
+        }
+        return item;
     }
 
 }

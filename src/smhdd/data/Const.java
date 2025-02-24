@@ -11,11 +11,11 @@ public class Const {
     public static final byte TYPE_CATEGORICAL = 1;
     public static final byte TYPE_NUMERICAL = 2;
 
-    public final static byte METRIC_QG = 1;
-    public final static byte METRIC_WRACC = 2;
-    public final static byte METRIC_WRACC_NORMALIZED = 3;
-    public static final byte METRIC_WRACC_OVER_SIZE = 4;
-    public static final byte METRIC_SUB = 5;
+    public final static String METRIC_QG = "Qg";
+    public final static String METRIC_WRACC = "WRAcc";
+    public final static String METRIC_WRACC_NORMALIZED = "WRAccN";
+    public static final String METRIC_WRACC_OVER_SIZE = "WRAccOverSize";
+    public static final String METRIC_SUB = "Sub";
 
     public final static byte SIMILARIDADE_JACCARD = 1;
     public final static byte SIMILARIDADE_SOKAL_MICHENER = 2;
