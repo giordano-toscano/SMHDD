@@ -10,10 +10,8 @@ public class Pattern implements Comparable<Pattern> {
 
     private HashSet<Item> items;
     private double quality;
-    //private int tp; // true positive count
-    //private int fp; // false positive count
-    // private boolean[] positiveCoverageArray;
-    // private boolean[] negativeCoverageArray;
+    private boolean[] positiveCoverageArray;
+    private boolean[] negativeCoverageArray;
     private Pattern[] similars;
 
     public Pattern(HashSet<Item> items){
@@ -71,37 +69,43 @@ public class Pattern implements Comparable<Pattern> {
     //     this.fp = fp;
     // }
 
-    // public boolean[] getPositiveCoverageArray(){
-    //     return this.positiveCoverageArray;
-    // }
+    public boolean[] getPositiveCoverageArray(){
+        return this.positiveCoverageArray;
+    }
 
-    // public void setPositiveCoverageArray(boolean[] array){
-    //     this.positiveCoverageArray = array;
-    // }
+    public void setPositiveCoverageArray(boolean[] array){
+        this.positiveCoverageArray = array;
+    }
 
-    // public boolean[] getNegativeCoverageArray(){
-    //     return this.negativeCoverageArray;
-    // }
+    public boolean[] getNegativeCoverageArray(){
+        return this.negativeCoverageArray;
+    }
 
-    // public void setNegativeCoverageArray(boolean[] array){
-    //     this.negativeCoverageArray = array;
-    // }
+    public void setNegativeCoverageArray(boolean[] array){
+        this.negativeCoverageArray = array;
+    }
 
     // Utils
 
     public boolean addSimilar(Pattern similar){
         if(this.similars == null){    // if its the first similar
             this.similars = new Pattern[Pattern.maxSimilarQuantity];
-            this.similars[0] = new Pattern(similar.getItems()); // AVALIAR ESTE PATTERN
+            this.similars[0] = new Pattern(similar.getItems()); 
+            this.similars[0].setQuality(similar.getQuality());
+            this.similars[0].setNegativeCoverageArray(similar.getNegativeCoverageArray());
+            this.similars[0].setPositiveCoverageArray(similar.getPositiveCoverageArray());
             //Preencher demais com vazio
             for(int i = 1; i < Pattern.maxSimilarQuantity; i++){
-                this.similars[i] = new Pattern(new HashSet<>()); // AVALIAR ESTE PATTERN
+                this.similars[i] = new Pattern(new HashSet<>()); 
             }
             return true; //the pattern has been added
         }else{                       // if its not the first similar 
             if(similar.getQuality() > this.similars[Pattern.maxSimilarQuantity-1].getQuality()){
                 if(!this.findInSimilars(similar)){
                     this.similars[Pattern.maxSimilarQuantity-1] = new Pattern(similar.getItems());
+                    this.similars[Pattern.maxSimilarQuantity-1].setQuality(similar.getQuality());
+                    this.similars[Pattern.maxSimilarQuantity-1].setNegativeCoverageArray(similar.getNegativeCoverageArray());
+                    this.similars[Pattern.maxSimilarQuantity-1].setPositiveCoverageArray(similar.getPositiveCoverageArray());
                     Arrays.sort(this.similars);
                     return true; // the pattern has been added
                 }

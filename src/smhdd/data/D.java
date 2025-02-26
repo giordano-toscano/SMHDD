@@ -356,32 +356,34 @@ public class D {
 
     // Main method
     public static void main(String[] args) throws IOException {
-        String directory = "datasets/";
-        String file = "ENEM2014_81_NOTA_10k.csv";
-        String filepath = directory+file;
-        D dataset  = new D(filepath, ",");
-        //byte[] attributeTypes = {Const.TYPE_CATEGORICAL, Const.TYPE_CATEGORICAL, Const.TYPE_NUMERICAL};
-        //dataset.setAttributeTypes(attributeTypes);
+        // String directory = "datasets/";
+        // String file = "toy_example_en_US.csv";
+        // String filepath = directory+file;
+        // D dataset  = new D(filepath, ",");
+        // //byte[] attributeTypes = {Const.TYPE_CATEGORICAL, Const.TYPE_CATEGORICAL, Const.TYPE_NUMERICAL};
+        // //dataset.setAttributeTypes(attributeTypes);
 
-        System.out.println("PRINT nomeVariaveis:");
-        for (String row : dataset.getVariableNames()) {
-            System.out.print(row + "\t");
-            System.out.println();
-        }
-        // System.out.println("\nPRINT itemValuesObj");
-        // for (Object cell : dataset.getItemValuesObj()) {
-        //     System.out.print(cell + "\t");
+        // System.out.println("PRINT nomeVariaveis:");
+        // for (String row : dataset.getVariableNames()) {
+        //     System.out.print(row + "\t");
+        //     System.out.println();
         // }
-        // System.out.println("\nPRINT itemValuesInt");
-        // for (int cell : dataset.getItemValuesInt()) {
-        //     System.out.print(cell + "\t");
-        // }
+
         // System.out.println("\nPRINT itemAtributosStr");
         // for (String cell : dataset.getItemAttributesStr()) {
         //     System.out.print(cell + "\t");
         // }
         // System.out.println("\nPRINT itemAtributosInt");
         // for (int cell : dataset.getItemAttributesInt()) {
+        //     System.out.print(cell + "\t");
+        // }
+
+        // System.out.println("\nPRINT itemValuesObj");
+        // for (Object cell : dataset.getItemValuesObj()) {
+        //     System.out.print(cell + "\t");
+        // }
+        // System.out.println("\nPRINT itemValuesInt");
+        // for (int cell : dataset.getItemValuesInt()) {
         //     System.out.print(cell + "\t");
         // }
 

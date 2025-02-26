@@ -1,6 +1,10 @@
 package smhdd.evolutionary;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashSet;
+import java.util.List;
+import java.util.stream.IntStream;
 import smhdd.data.Const;
 import smhdd.data.D;
 import smhdd.data.Example;
@@ -16,14 +20,13 @@ public final class Evaluation {
     private Evaluation (){
         // Private constructor to prevent instantiation
     }
-
     public static void evaluatePopulation(Pattern[] population, D dataset){
-        for(Pattern pattern : population){
-            Evaluation.evaluatePattern(pattern, dataset);
-        }
+        int populationSize = population.length;
+        IntStream.range(0, populationSize).parallel().forEach(i -> Evaluation.evaluatePattern(population[i], dataset));
+        
     }
     
-    public static void evaluatePattern(Pattern p, D dataset){
+    private static void evaluatePattern(Pattern p, D dataset){
         int[] result = Evaluation.getPositiveAndNegativeCount(p, dataset);
         int fp = result[0];
         int tp = result[1];
@@ -79,31 +82,40 @@ public final class Evaluation {
         return true; 
     }
 
-    // private static double calculateQuality(Pattern p, D dataset){
-    //     double quality = 0.0;
-    //     int tp = p.getTP();
-    //     int fp = p.getFP();
+    private static int getEndIndex(Pattern[] topK, Pattern[] pAsterisk, D dataset){
+        int endIndex = pAsterisk.length;
+        for( int i = 0; i < pAsterisk.length; i++){
+            if(pAsterisk[i].getQuality() <= topK[topK.length-1].getQuality()){
+                endIndex = i;
+                break;
+            }
+        }
+        return endIndex;
+    }
+    public static void setCoverageArraysInPattern(Pattern p, D dataset){
+        boolean[][] result = Evaluation.getPositiveAndNegativeCoverageArrays(p, dataset);
+        p.setNegativeCoverageArray(result[0]);
+        p.setPositiveCoverageArray(result[1]);
+    }
 
-    //     switch(Evaluation.evaluationMetric){
-    //         case Const.METRIC_QG -> quality = Evaluation.calculateQg(tp, fp);
-    //         case Const.METRIC_WRACC -> quality = Evaluation.calculateWRAcc(tp, fp, dataset);
-    //         case Const.METRIC_WRACC_NORMALIZED -> quality = Evaluation.calculateWRAccN(tp, fp, dataset);
-    //         case Const.METRIC_WRACC_OVER_SIZE -> quality = Evaluation.calculateWRAcc(tp, fp, dataset) / p.getItems().size();
-    //         case Const.METRIC_SUB -> quality = Evaluation.calculateSub(tp, fp);
-    //         // case Evaluation.METRICA_AVALIACAO_CHI_QUAD:
-    //         //     quality = Evaluation.chi_quad(tp, fp);
-    //         //     break;
-    //         // case Evaluation.METRICA_AVALIACAO_CHI_QUAD:
-    //         //     quality = Evaluation.chi_quad(tp, fp);
-    //         //     break;
-    //     }
-    //     return quality;
-    // }   
+    public static void setPositiveAndNegativeCoverageArrays(Pattern[] topK, Pattern[] pAsterisk, D dataset){
+        int endIndex = getEndIndex(topK, pAsterisk, dataset);
+        IntStream.range(0, endIndex).parallel().forEach(i -> Evaluation.setCoverageArraysInPattern(pAsterisk[i], dataset));
+        
+        List<Pattern> topkAndSimilars = new ArrayList<>(Arrays.asList(topK));
+        for(Pattern pattern : topK){
+            Pattern[] similarsArray = pattern.getSimilars();
+            if(similarsArray != null){
+                List<Pattern> similars = Arrays.asList(pattern.getSimilars());
+                topkAndSimilars.addAll(similars);
+            }
+        }
+        Pattern[] topkAndSimilarsArray = topkAndSimilars.toArray(Pattern[]::new);
+        IntStream.range(0, topkAndSimilarsArray.length).parallel().forEach(i -> Evaluation.setCoverageArraysInPattern(topkAndSimilarsArray[i], dataset));
+    }
 
     private static double calculateQuality(int fp, int tp, D dataset){
         double quality = 0.0;
-        // int tp = p.getTP();
-        // int fp = p.getFP();
 
         switch(Evaluation.evaluationMetric){
             case Const.METRIC_QG -> quality = Evaluation.calculateQg(tp, fp);
@@ -171,13 +183,10 @@ public final class Evaluation {
         double Bcount = 0.0;
 
         boolean[] a, b;
-
-        boolean[][] resultA = Evaluation.getPositiveAndNegativeCoverageArrays(p1, dataset);
-        boolean[][] resultB = Evaluation.getPositiveAndNegativeCoverageArrays(p2, dataset);
-        
+  
         //POSITIVO
-        a = resultA[1];
-        b = resultB[1];
+        a = p1.getPositiveCoverageArray();
+        b = p2.getPositiveCoverageArray();
         for(int i = 0; i < a.length; i++){
             if(a[i])
                 Acount++;
@@ -193,10 +202,9 @@ public final class Evaluation {
                 neitherAB++;                        
         }
         
-        
         //NEGATIVO
-        a = resultA[0];
-        b = resultB[0];
+        a = p1.getNegativeCoverageArray();
+        b = p2.getNegativeCoverageArray();
         for(int i = 0; i < a.length; i++){
             if(a[i])
                 Acount++;

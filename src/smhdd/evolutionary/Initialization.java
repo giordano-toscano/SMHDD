@@ -14,14 +14,14 @@ public final class Initialization {
         // Private constructor to prevent instantiation
     }
 
-    public static Pattern[] generateDimension1Patterns(D dataset){
-        Pattern[] P0 = new Pattern[dataset.getItemCount()];
+    public static Pattern[] generateDimension1Patterns(D dataset){ //é possivel paralelizar
+        int itemCount = dataset.getItemCount();
+        Pattern[] P0 = new Pattern[itemCount];
         
-        for(int i = 0; i < dataset.getItemCount(); i++){
+        for(int i = 0; i < itemCount; i++){
             HashSet<Item> items = new HashSet<>();
             Item item = Initialization.retrieveItemFromIndex(dataset, i);
             items.add(item);
-
             P0[i] = new Pattern(items);
         }        
         return P0;

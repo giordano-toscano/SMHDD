@@ -3,16 +3,17 @@ package smhdd.data;
 import java.util.Objects;
 
 public final class Index extends Item {
-    private final int value;
 
-    public Index(int index, int value) {
-        super(index);
-        this.value = value;
+    private final int valueIndex;
+
+    public Index(int attributeIndex, int valueIndex) {
+        super(attributeIndex);
+        this.valueIndex = valueIndex;
     }
 
     @Override
-    public boolean contains(double value) {
-        return this.value == value;
+    public boolean contains(double valueIndex) {
+        return this.valueIndex == valueIndex;
     }
 
     @Override
@@ -20,18 +21,18 @@ public final class Index extends Item {
         if (this == obj) return true;
         if (obj == null || getClass() != obj.getClass()) return false;
         Index index = (Index) obj;
-        return super.attributeIndex == index.attributeIndex && this.value == index.value;
+        return super.attributeIndex == index.attributeIndex && this.valueIndex == index.valueIndex;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(super.attributeIndex, this.value);
+        return Objects.hash(super.attributeIndex, this.valueIndex);
     }
 
     @Override
     public String toString(){
         StringBuilder sb = new StringBuilder();
-        sb.append("(a:").append(super.attributeIndex).append(", v:").append(this.value).append(")");
+        sb.append("(a:").append(super.attributeIndex).append(", v:").append(this.valueIndex).append(")");
         return sb.toString();
     }
     

@@ -11,6 +11,8 @@ public final class Selection {
         // Private constructor to prevent instantiation
     }
 
+    public static int loopCount = 0;
+
     public static int saveRelevantPatterns(Pattern[] topK, Pattern[] pAsterisk, D dataset){
         int novosk = 0;
         double similaridade;
@@ -40,6 +42,9 @@ public final class Selection {
                         }else{
                             topK[j] = new Pattern(p_PAsterisco.getItems()); // GERAR AVALICAO DESTE !!!!!!!!!
                             topK[j].setQuality(p_PAsterisco.getQuality());
+                            topK[j].setNegativeCoverageArray(p_PAsterisco.getNegativeCoverageArray());
+                            topK[j].setPositiveCoverageArray(p_PAsterisco.getPositiveCoverageArray());
+                            //Evaluation.setCoverageArraysInPattern(topK[j], dataset);
                             //Adicionando p_Pk como filho de P_PAsterisco
                             topK[j].addSimilar(p_Pk);
                             
@@ -54,8 +59,10 @@ public final class Selection {
                     }
                                         
                 }else if(j == topK.length-1){//Se dp.new não for similar a nenhuma DP de Pk, então ele substitui a última
-                    topK[topK.length-1] = new Pattern(p_PAsterisco.getItems()); // GERAR AVALICAO DESTE !!!!!!!!!
+                    topK[topK.length-1] = new Pattern(p_PAsterisco.getItems());
                     topK[topK.length-1].setQuality(p_PAsterisco.getQuality());
+                    topK[topK.length-1].setNegativeCoverageArray(p_PAsterisco.getNegativeCoverageArray());
+                    topK[topK.length-1].setPositiveCoverageArray(p_PAsterisco.getPositiveCoverageArray());
                     Arrays.sort(topK);                                    
                     novosk++;                    
                 }       
