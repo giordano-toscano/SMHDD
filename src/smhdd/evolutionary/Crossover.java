@@ -3,7 +3,6 @@ package smhdd.evolutionary;
 import java.util.HashSet;
 import smhdd.data.Const;
 import smhdd.data.D;
-import smhdd.data.Item;
 import smhdd.data.Pattern;
 
 public final class Crossover {
@@ -27,7 +26,7 @@ public final class Crossover {
     }  
 
     public static Pattern chromosomeFusion(Pattern parent1, Pattern parent2){
-        HashSet<Item> newItems = new HashSet<>();
+        HashSet<Integer> newItems = new HashSet<>();
         newItems.addAll(parent1.getItems());
         newItems.addAll(parent2.getItems());
         Pattern child = new Pattern(newItems);
@@ -67,11 +66,11 @@ public final class Crossover {
 
     private static Pattern[] uniformCrossover(Pattern parent1, Pattern parent2){
         Pattern[] offspring = new Pattern[2];
-        HashSet<Item> child1Items = new HashSet<>();
-        HashSet<Item> child2Items = new HashSet<>();
+        HashSet<Integer> child1Items = new HashSet<>();
+        HashSet<Integer> child2Items = new HashSet<>();
         
-        HashSet<Item> parent1Items = parent1.getItems();
-        for(Item item : parent1Items){
+        HashSet<Integer> parent1Items = parent1.getItems();
+        for(Integer item : parent1Items){
             if(Const.random.nextBoolean()){
                 child1Items.add(item);
             }else{          
@@ -79,8 +78,8 @@ public final class Crossover {
             }  
         }
 
-        HashSet<Item> parent2Items = parent2.getItems();
-        for(Item item : parent2Items){
+        HashSet<Integer> parent2Items = parent2.getItems();
+        for(Integer item : parent2Items){
             if(Const.random.nextBoolean()){
                 child1Items.add(item);
             }else{          

@@ -14,9 +14,10 @@ public class D {
 
     private String targetValue = "\"p\"";
     //private String targetValue = "p";
+    private double[][] numericalColumns;
+    private double[][] examples;
+    private boolean[] labels;
     private String[] variableNames; 
-    private Example.Node[][] examplesTransposed;
-    private Example[] exampleLists;
     private byte[] attributeTypes;
 
     // Items
@@ -36,8 +37,9 @@ public class D {
     public D(String path, String delimiter) throws IOException{
         String[][] examplesStr = this.loadFile(path, delimiter);
         this.generateItems(examplesStr);
-        this.wrapInExampleLists(this.convertExamplesFromStrToDouble(examplesStr));
-        this.labelExamples(examplesStr);
+        this.convertExamplesFromStrToDouble(examplesStr);
+        this.extractLabels(examplesStr);
+        this.extractNumericalColumns();
     }
 
     private String[][] loadFile(String filePath, String delimiter) throws IOException{    
@@ -132,45 +134,42 @@ public class D {
         return list;
     }
 
-    private double[][] convertExamplesFromStrToDouble(String[][] examplesStr){
+    private void convertExamplesFromStrToDouble(String[][] examplesStr){
 
-        double[][] examplesDoubleMatrix = new double[this.exampleCount][this.attributeCount]; // matrix of examples in integer format
+        this.examples = new double[this.exampleCount][this.attributeCount]; // matrix of examples in integer format
         int itemIndex = 0;
         for (int attributeIndex : this.itemAttributesInt){
             if(this.attributeTypes[attributeIndex] == Const.TYPE_CATEGORICAL){ // categorical attribute
                 for(int i = 0; i < this.exampleCount; i++){ 
                     if(examplesStr[i][attributeIndex].equals(this.itemValuesObj[itemIndex])){
-                        examplesDoubleMatrix[i][attributeIndex] = this.itemValuesInt[itemIndex];
+                        examples[i][attributeIndex] = this.itemValuesInt[itemIndex];
                     }
                 }
             }else{ // numerical attribute
                 for(int i = 0; i < this.exampleCount; i++)
-                    examplesDoubleMatrix[i][attributeIndex] = Double.parseDouble(examplesStr[i][attributeIndex]);
+                    examples[i][attributeIndex] = Double.parseDouble(examplesStr[i][attributeIndex]);
             }
             itemIndex++;
         }
-        return examplesDoubleMatrix;
     }
 
-    private void wrapInExampleLists(double[][] examplesDouble){
-        this.examplesTransposed = new Example.Node[this.attributeCount][this.exampleCount];
-        this.exampleLists = new Example[this.exampleCount]; 
-
+    private void extractNumericalColumns(){
+        int numericalCount = 0;
+        for(byte type : this.attributeTypes){
+            if(type == Const.TYPE_NUMERICAL)
+                numericalCount++;
+        }
+        this.numericalColumns = new double[numericalCount][this.exampleCount];
         for(int i =  0; i < this.exampleCount; i++){
-            Example example = new Example();
-            for (int j = 0; j < this.attributeCount; j++){   
-                Example.Node node = new Example.Node(examplesDouble[i][j]);
-                this.examplesTransposed[j][i] = node;
-
-                example.insertNode(node);
-
+            for (int j = 0; j < this.attributeCount; j++){  
+                if(this.attributeTypes[j] == Const.TYPE_NUMERICAL) 
+                    this.numericalColumns[j][i] = this.examples[i][j];
             }
-            exampleLists[i] = example;
         }
     }
 
-    private void labelExamples(String[][] examplesStrMatrix){
-
+    private void extractLabels(String[][] examplesStrMatrix){
+        this.labels = new boolean[this.exampleCount];
         int labelIndex = this.variableNames.length - 1;
 
         for(int i = 0; i < this.exampleCount; i++){
@@ -183,7 +182,7 @@ public class D {
                 this.negativeExampleCount++;
             }
             // setting example's label
-            this.exampleLists[i].setLabel(isPositive);
+            this.labels[i] = isPositive;
         }
     }
 
@@ -210,11 +209,11 @@ public class D {
         return hasDigit; // Must contain at least one digit
     }
 
-    public static void displayExamplesTransposed(Example.Node[][] matrix) {
+    public static void displayExamplesTransposed(double[][] matrix) {
         // Iterate over columns first
         for (int col = 0; col < matrix[0].length; col++) {
             // Iterate over rows
-            for (Example.Node[] matrix1 : matrix) {
+            for (double[] matrix1 : matrix) {
                 System.out.print(matrix1[col] + "\t");
             }
             System.out.println();
@@ -321,12 +320,12 @@ public class D {
         return this.items;
     }
 
-    public Example.Node[][] getExamplesTransposed(){
-        return this.examplesTransposed;
+    public double[][] getNumericalColumns(){
+        return this.numericalColumns;
     }
 
-    public Example[] getExampleLists(){
-        return this.exampleLists;
+    public double[][] getExamples(){
+        return this.examples;
     }
 
     public int[] getItemAttributesInt() {
@@ -347,6 +346,10 @@ public class D {
 
     public byte[] getAttributeTypes(){
         return this.attributeTypes;
+    }
+    
+    public boolean[] getLabels(){
+        return this.labels;
     }
 
     // SETs

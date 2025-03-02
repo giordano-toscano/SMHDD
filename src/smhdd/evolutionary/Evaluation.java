@@ -7,8 +7,6 @@ import java.util.List;
 import java.util.stream.IntStream;
 import smhdd.data.Const;
 import smhdd.data.D;
-import smhdd.data.Example;
-import smhdd.data.Item;
 import smhdd.data.Pattern;
 
 public final class Evaluation {
@@ -34,49 +32,53 @@ public final class Evaluation {
     }
 
     private static int[] getPositiveAndNegativeCount(Pattern p, D dataset){
-        HashSet<Item> items = p.getItems();
+        HashSet<Integer> items = p.getItems();
         int exampleCount = dataset.getExampleCount();
-        Example[] examples = dataset.getExampleLists();
+        double[][] examples = dataset.getExamples();
+        boolean[] labels = dataset.getLabels();
 
         int positiveCount = 0;
         int negativeCount = 0;
 
-        for(int i = 0; i < exampleCount; i++){    
-            Example example = examples[i];        
-            boolean isCovered = Evaluation.patternContemplaExemploAND(items, example);  
-            if(isCovered && example.getLabel() == true)
+        for(int i = 0; i < exampleCount; i++){        
+            boolean isCovered = Evaluation.isExampleCoveredByPattern(dataset, items, examples[i]);  
+            if(isCovered && labels[i] == true)
                 positiveCount++;
-            else if(isCovered && example.getLabel() == false)
+            else if(isCovered && labels[i] == false)
                 negativeCount++;    
         }      
         return new int[]{negativeCount, positiveCount};
     }
 
     private static boolean[][] getPositiveAndNegativeCoverageArrays(Pattern p, D dataset){
-        HashSet<Item> items = p.getItems();
+        HashSet<Integer> items = p.getItems();
         int exampleCount = dataset.getExampleCount();
-        Example[] examples = dataset.getExampleLists();
+        double[][] examples = dataset.getExamples();
+        boolean[] labels = dataset.getLabels();
         
-        boolean[] positiveCoverageArray = new boolean[exampleCount];
-        boolean[] negativeCoverageArray = new boolean[exampleCount];
+        boolean[] positiveCoverageArray = new boolean[dataset.getPositiveExampleCount()];
+        boolean[] negativeCoverageArray = new boolean[dataset.getNegativeExampleCount()];
+        int positiveArrayIndex = 0;
+        int negativeArrayIndex = 0;
 
-        for(int i = 0; i < exampleCount; i++){    
-            Example example = examples[i];        
-            boolean isCovered = Evaluation.patternContemplaExemploAND(items, example);  
-            if(isCovered && example.getLabel() == true)
-                positiveCoverageArray[i] = true;
-            else if(isCovered && example.getLabel() == false)
-                negativeCoverageArray[i] = true;
+        for(int i = 0; i < exampleCount; i++){      
+            boolean isCovered = Evaluation.isExampleCoveredByPattern(dataset, items, examples[i]);  
+            if(labels[i] == true)
+                positiveCoverageArray[positiveArrayIndex++] = isCovered;
+            else
+                negativeCoverageArray[negativeArrayIndex++] = isCovered;
         }      
         return new boolean[][]{negativeCoverageArray, positiveCoverageArray};
     }
 
-    private static boolean patternContemplaExemploAND(HashSet<Item> items, Example example){
-        //System.out.println("### Novo Exemplo ###");
-        for(Item item : items){
-            int attributeIndex = item.getAttributeIndex();
-            double exampleAttributeValue = example.get(attributeIndex);
-            if(item.contains(exampleAttributeValue) == false)
+    private static boolean isExampleCoveredByPattern(D dataset, HashSet<Integer> items, double[] example){
+        int[] itemAttributes = dataset.getItemAttributesInt();
+        int[] itemValues = dataset.getItemValuesInt();
+        for(Integer item : items){
+            int attributeIndex = itemAttributes[item];
+            double itemValue = itemValues[item];
+            double exampleAttributeValue = example[attributeIndex];
+            if(itemValue != exampleAttributeValue)
                 return false;
         }       
         return true; 
@@ -99,9 +101,6 @@ public final class Evaluation {
     }
 
     public static void setPositiveAndNegativeCoverageArrays(Pattern[] topK, Pattern[] pAsterisk, D dataset){
-        int endIndex = getEndIndex(topK, pAsterisk, dataset);
-        IntStream.range(0, endIndex).parallel().forEach(i -> Evaluation.setCoverageArraysInPattern(pAsterisk[i], dataset));
-        
         List<Pattern> topkAndSimilars = new ArrayList<>(Arrays.asList(topK));
         for(Pattern pattern : topK){
             Pattern[] similarsArray = pattern.getSimilars();
@@ -111,7 +110,14 @@ public final class Evaluation {
             }
         }
         Pattern[] topkAndSimilarsArray = topkAndSimilars.toArray(Pattern[]::new);
-        IntStream.range(0, topkAndSimilarsArray.length).parallel().forEach(i -> Evaluation.setCoverageArraysInPattern(topkAndSimilarsArray[i], dataset));
+        
+        int endIndex = getEndIndex(topK, pAsterisk, dataset);
+
+        Pattern[] totalArray = new Pattern[endIndex+topkAndSimilarsArray.length];
+        System.arraycopy(pAsterisk, 0, totalArray, 0, endIndex);        
+        System.arraycopy(topkAndSimilarsArray, 0, totalArray, endIndex, topkAndSimilarsArray.length);  
+
+        IntStream.range(0, totalArray.length).parallel().forEach(i -> Evaluation.setCoverageArraysInPattern(totalArray[i], dataset));
     }
 
     private static double calculateQuality(int fp, int tp, D dataset){

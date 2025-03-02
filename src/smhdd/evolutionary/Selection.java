@@ -11,11 +11,9 @@ public final class Selection {
         // Private constructor to prevent instantiation
     }
 
-    public static int loopCount = 0;
-
     public static int saveRelevantPatterns(Pattern[] topK, Pattern[] pAsterisk, D dataset){
-        int novosk = 0;
-        double similaridade;
+        int newlyAddedToTopk = 0;
+        double similarity;
         for( int i = 0; i < pAsterisk.length && (pAsterisk[i].getQuality() > topK[topK.length-1].getQuality()); i++){
             Pattern p_PAsterisco = pAsterisk[i];
             //Três possibilidades
@@ -26,9 +24,8 @@ public final class Selection {
             //(3.2) similar com p_PAsterisco maior: p_PAsterisco engloba como similar p_Pk, ocupa a vaga em Pk[i] e reordena-se Pk
             for(int j = 0; j < topK.length; j++){
                 Pattern p_Pk = topK[j];
-                //double similaridade = SELECAO.similaridadeDPpositivo(p_PAsterisco, p_Pk);
-                similaridade = Evaluation.calculateSimilarity(p_Pk, p_PAsterisco, dataset);
-                if(similaridade >= Evaluation.getMinSimilarity()){// Houve similaridade
+                similarity = Evaluation.calculateSimilarity(p_Pk, p_PAsterisco, dataset);
+                if(similarity >= Evaluation.getMinSimilarity()){// Houve similaridade
                     //Se eles tiverem os mesmos itens, descartar! (1)
                     if(p_PAsterisco.isEqualTo(p_Pk)){
                         break; //sair do for que itera Pk 
@@ -37,10 +34,10 @@ public final class Selection {
                         if(p_Pk.getQuality() > p_PAsterisco.getQuality() || (p_Pk.getQuality() == p_PAsterisco.getQuality() && p_Pk.getItems().size() <= p_PAsterisco.getItems().size())){
                             boolean aproveitadoEmPk = p_Pk.addSimilar(p_PAsterisco);
                             if(aproveitadoEmPk){
-                                novosk++;
+                                newlyAddedToTopk++;
                             }
                         }else{
-                            topK[j] = new Pattern(p_PAsterisco.getItems()); // GERAR AVALICAO DESTE !!!!!!!!!
+                            topK[j] = new Pattern(p_PAsterisco.getItems());
                             topK[j].setQuality(p_PAsterisco.getQuality());
                             topK[j].setNegativeCoverageArray(p_PAsterisco.getNegativeCoverageArray());
                             topK[j].setPositiveCoverageArray(p_PAsterisco.getPositiveCoverageArray());
@@ -53,22 +50,23 @@ public final class Selection {
                                 Selection.saveRelevantPatterns(topK, p_Pk.getSimilars(), dataset);
                             }                            
                             Arrays.sort(topK);
-                            novosk++;
+                            newlyAddedToTopk++;
                         }                        
                         break; //sair do for que itera Pk
                     }
                                         
                 }else if(j == topK.length-1){//Se dp.new não for similar a nenhuma DP de Pk, então ele substitui a última
                     topK[topK.length-1] = new Pattern(p_PAsterisco.getItems());
-                    topK[topK.length-1].setQuality(p_PAsterisco.getQuality());
-                    topK[topK.length-1].setNegativeCoverageArray(p_PAsterisco.getNegativeCoverageArray());
-                    topK[topK.length-1].setPositiveCoverageArray(p_PAsterisco.getPositiveCoverageArray());
+                    Pattern lastTopK = topK[topK.length-1];
+                    lastTopK.setQuality(p_PAsterisco.getQuality());
+                    lastTopK.setNegativeCoverageArray(p_PAsterisco.getNegativeCoverageArray());
+                    lastTopK.setPositiveCoverageArray(p_PAsterisco.getPositiveCoverageArray());
                     Arrays.sort(topK);                                    
-                    novosk++;                    
+                    newlyAddedToTopk++;                    
                 }       
             }//for percorre Pk     
         }
-        return novosk;
+        return newlyAddedToTopk;
     }
 
     public static int[] binaryTournament(int populationSize, Pattern[] population){
@@ -85,15 +83,15 @@ public final class Selection {
         return indices;
     }
 
-    public static Pattern[] selectBest(Pattern[] population, Pattern[] newPopulation){
-        int populationSize = population.length;
-        Pattern[] populationAsterisk = new Pattern[populationSize];        
+    public static Pattern[] selectBest(Pattern[] previousPopulation, Pattern[] newPopulation){
+        int populationSize = previousPopulation.length;
+        Pattern[] populationBest = new Pattern[populationSize];        
         Pattern[] populationAux = new Pattern[2*populationSize];        
-        System.arraycopy(population, 0, populationAux, 0, population.length);        
-        System.arraycopy(newPopulation, 0, populationAux, population.length, newPopulation.length);        
+        System.arraycopy(previousPopulation, 0, populationAux, 0, previousPopulation.length);        
+        System.arraycopy(newPopulation, 0, populationAux, previousPopulation.length, newPopulation.length);        
         Arrays.sort(populationAux);                
-        System.arraycopy(populationAux, 0, populationAsterisk, 0, populationAsterisk.length);                
-        return populationAsterisk;
+        System.arraycopy(populationAux, 0, populationBest, 0, populationBest.length);                
+        return populationBest;
     }
 
 }

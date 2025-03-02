@@ -8,13 +8,13 @@ public class Pattern implements Comparable<Pattern> {
     private static int generatedPatternCount;
     private static byte maxSimilarQuantity;
 
-    private HashSet<Item> items;
+    private HashSet<Integer> items;
     private double quality;
     private boolean[] positiveCoverageArray;
     private boolean[] negativeCoverageArray;
     private Pattern[] similars;
 
-    public Pattern(HashSet<Item> items){
+    public Pattern(HashSet<Integer> items){
         this.items = items;
         Pattern.generatedPatternCount++;
     }
@@ -29,11 +29,11 @@ public class Pattern implements Comparable<Pattern> {
         Pattern.maxSimilarQuantity = Pattern.maxSimilarQuantity == 0 ? quantity : Pattern.maxSimilarQuantity;
     }
 
-    public HashSet<Item> getItems() {
+    public HashSet<Integer> getItems() {
         return this.items;
     }
 
-    public void setItems(HashSet<Item> items) {
+    public void setItems(HashSet<Integer> items) {
         this.items = items;
     }
 
@@ -123,11 +123,10 @@ public class Pattern implements Comparable<Pattern> {
         return false;        
     }
 
-    @Override
-    public String toString(){
+    public String display(D dataset){
         String result = "Pattern(items={";
-        for(Item e : this.items){
-            result = result + e + ",";
+        for(Integer e : this.items){
+            result = result + "(a:" + dataset.getItemAttributesInt()[e] + ", v:"+ dataset.getItemValuesInt()[e]+"),";
         }
         result = result + "}"+", quality="+this.quality+")";
         return result;

@@ -17,7 +17,7 @@ public class SMHDD {
 
         try {
             String directory = "datasets/";
-            String file = "gordon-pn-freq-8.csv";
+            String file = "matrixBinaria-Global-100-p.csv";
             String filepath = directory+file;
 
             Const.random = new Random(Const.SEEDS[0]); 
@@ -97,7 +97,6 @@ public class SMHDD {
     // }
 
     public static Pattern[] run(D dataset, int k, double maxTimeSegundos){
-        //long t0 = System.currentTimeMillis(); //Initial time
         Pattern[] topK = new Pattern[k];                
         Pattern[] population = null;
         
@@ -108,6 +107,7 @@ public class SMHDD {
 
         //Inicializa garantindo que P maior que Pk sempre! em bases pequenas isso nem sempre ocorre
         Pattern[] populationAux = Initialization.generateDimension1Patterns(dataset); //P recebe população inicial
+
         if(populationAux.length < k){
             population = new Pattern[k];            
             for(int i = 0; i < k; i++){
@@ -129,42 +129,40 @@ public class SMHDD {
         boolean isFirstGeneration = true;
         //Laço do AG
         Pattern[] newPopulation = null;
-        Pattern[] populationAsterisk = null;
+        Pattern[] populationBest = null;
         
         int populationSize = population.length;
         //System.out.println("Buscas...");
         for(int resetCount = 0; resetCount < 3; resetCount++){//Controle número de reinicializações
             if(resetCount > 0){
                 population = Initialization.initializeUsingTopK(dataset, populationSize, topK);
-                Evaluation.evaluatePopulation(population, dataset);
+                Evaluation.evaluatePopulation(population, dataset);    
             }
         
-            double mutationTax = 0.4; //Mutação inicia em 0.4. Crossover é sempre 1-mutationTax.
+            double mutationRate = 0.4; //Mutação inicia em 0.4. Crossover é sempre 1-mutationTax.
         
             while(generationsWithoutImprovementCount < 3){
                 if(isFirstGeneration){
                     newPopulation = Crossover.mergeChromosomesInPopulation(population);
                     isFirstGeneration = false;  
                 }else{
-                    newPopulation = Crossover.applyUniformCrossoverInPopulation(population, mutationTax, dataset);            
-                }       
-                Evaluation.evaluatePopulation(newPopulation, dataset);   
-                
-                populationAsterisk = Selection.selectBest(population, newPopulation); 
-                population = populationAsterisk;   
+                    newPopulation = Crossover.applyUniformCrossoverInPopulation(population, mutationRate, dataset);        
+                }  
+                Evaluation.evaluatePopulation(newPopulation, dataset);
+        
+                populationBest = Selection.selectBest(population, newPopulation); 
+                population = populationBest;   
 
-                long t0 = System.currentTimeMillis(); //Initial time
-                Evaluation.setPositiveAndNegativeCoverageArrays(topK, populationAsterisk, dataset);
-                int novosK = Selection.saveRelevantPatterns(topK, populationAsterisk, dataset);//Atualizando Pk e coletando número de indivíduos substituídos 
-                double execution_time = (System.currentTimeMillis() - t0)/1000.0; // Total execution time   
+                Evaluation.setPositiveAndNegativeCoverageArrays(topK, populationBest, dataset);
+                int newlyAddedToTopk = Selection.saveRelevantPatterns(topK, populationBest, dataset);//Atualizando Pk e coletando número de indivíduos substituídos 
 
                 // Definição automática de mutação de crossover
-                if(novosK > 0 && mutationTax > 0.0)//Aumenta cruzamento se Pk estiver evoluindo e se mutação não não for a menos possível.
-                    mutationTax -= 0.2;
-                else if(novosK == 0 && mutationTax < 1.0)//Aumenta mutação caso Pk não tenha evoluido e mutação não seja maior que o limite máximo.
-                     mutationTax += 0.2;
+                if(newlyAddedToTopk > 0 && mutationRate > 0.0)//Aumenta cruzamento se Pk estiver evoluindo e se mutação não não for a menos possível.
+                    mutationRate -= 0.2;
+                else if(newlyAddedToTopk == 0 && mutationRate < 1.0)//Aumenta mutação caso Pk não tenha evoluido e mutação não seja maior que o limite máximo.
+                     mutationRate += 0.2;
                 //Critério de parada: 3x sem evoluir Pk com taxa de mutação 1.0
-                if(novosK == 0 && mutationTax == 1.0)
+                if(newlyAddedToTopk == 0 && mutationRate == 1.0)
                     generationsWithoutImprovementCount++;
                 else
                     generationsWithoutImprovementCount = 0;
@@ -172,6 +170,7 @@ public class SMHDD {
             } 
             generationsWithoutImprovementCount = 0;
         }
+
         return topK;
     }
 }
