@@ -32,12 +32,11 @@ public class SMHDD {
             Evaluation.setSimilarityMeasure(Const.SIMILARIDADE_JACCARD); 
             // setting threshold for determining when two subgroups are considered similar to each other
             Evaluation.setMinSimilarity(0.90f); 
+            // setting the type of each attribute
+            // byte[] attributeTypes = {Const.TYPE_CATEGORICAL, Const.TYPE_CATEGORICAL, Const.TYPE_NUMERICAL};
 
             System.out.println("Loading data set...");
             D dataset = new D(filepath, ",");
-            // setting the type of each attribute
-            // byte[] attributeTypes = {Const.TYPE_CATEGORICAL, Const.TYPE_CATEGORICAL, Const.TYPE_NUMERICAL};
-            // dataset.setAttributeTypes(attributeTypes);
             
             // displaying dataset info
             System.out.println(
@@ -51,17 +50,16 @@ public class SMHDD {
 
             System.out.println("Running SMHDD...");
 
-
             long t0 = System.currentTimeMillis(); //Initial time
             Pattern[] topk = SMHDD.run(dataset, k,-1);
             double execution_time = (System.currentTimeMillis() - t0)/1000.0; // Total execution time        
             
             // NEW AREAAA
             System.out.println("\n### Top-k subgroups:");
-            //Avaliador.imprimirRegras(p, k); 
+            D.imprimirRegras(dataset, topk); 
             
             //Informations about top-k DPs:  
-            System.out.println("Average " + Evaluation.getEvaluationMetric() + ": " + Evaluation.avaliarMedia(topk, k));
+            System.out.println("\nAverage " + Evaluation.getEvaluationMetric() + ": " + Evaluation.avaliarMedia(topk, k));
             System.out.println("Time(s): " + execution_time);
             // System.out.println("Average size: " + Avaliador.avaliarMediaDimensoes(p,k));        
             // System.out.println("Coverage of all Pk DPs in relation to D+: " + Avaliador.coberturaPositivo(p, k)*100 + "%");
@@ -91,10 +89,6 @@ public class SMHDD {
         } catch (IOException ex) {
         }
     }
-
-    // public static Pattern[] run(D dataset, int k, String tipoAvaliacao){
-    //     return run(dataset, k, tipoAvaliacao, -1);
-    // }
 
     public static Pattern[] run(D dataset, int k, double maxTimeSegundos){
         Pattern[] topK = new Pattern[k];                

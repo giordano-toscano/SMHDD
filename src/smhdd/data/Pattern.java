@@ -2,6 +2,7 @@ package smhdd.data;
 
 import java.util.Arrays;
 import java.util.HashSet;
+import smhdd.evolutionary.Evaluation;
 
 public class Pattern implements Comparable<Pattern> {
 
@@ -52,22 +53,6 @@ public class Pattern implements Comparable<Pattern> {
     public void setSimilars(Pattern[] similars) {
         this.similars = similars;
     }
-
-    // public int getTP() {
-    //     return this.tp;
-    // }
-
-    // public void setTP(int tp) {
-    //     this.tp = tp;
-    // }
-    
-    // public int getFP() {
-    //     return this.fp;
-    // }
-
-    // public void setFP(int fp) {
-    //     this.fp = fp;
-    // }
 
     public boolean[] getPositiveCoverageArray(){
         return this.positiveCoverageArray;
@@ -123,14 +108,56 @@ public class Pattern implements Comparable<Pattern> {
         return false;        
     }
 
-    public String display(D dataset){
-        String result = "Pattern(items={";
-        for(Integer e : this.items){
-            result = result + "(a:" + dataset.getItemAttributesInt()[e] + ", v:"+ dataset.getItemValuesInt()[e]+"),";
-        }
-        result = result + "}"+", quality="+this.quality+")";
-        return result;
+    // public String display(D dataset){
+    //     String result = "Pattern(items={";
+    //     for(Integer e : this.items){
+    //         result = result + "(a:" + dataset.getItemAttributesInt()[e] + ", v:"+ dataset.getItemValuesInt()[e]+"),";
+    //     }
+    //     result = result + "}"+", quality="+this.quality+")";
+    //     return result;
 
+    // }
+    public String display(D dataset) {
+        int[] attributeIndexes = dataset.getItemAttributesInt();
+        String[] categoricalItemAttribute = dataset.getItemAttributesStr();
+        //String[] categoricalItemValue = dataset.getItemValuesObj();
+        byte[] attributeTypes = dataset.getAttributeTypes();
+        //Capturando e ordenando conteúdo
+        Integer[] itemsArray = this.items.toArray(Integer[]::new);    
+        Arrays.sort(itemsArray);
+
+        //Salvando em string
+        StringBuilder str = new StringBuilder("{");
+
+        int i = 0;
+        do { 
+            //int attributeIndex = attributeIndexes[itemsArray[i]];    
+            //if(attributeTypes[attributeIndex] == Const.TYPE_CATEGORICAL)
+                //str.append(categoricalItemAttribute[itemsArray[i]] + " = " + dataset.getItemValuesObj[itemsArray[i]]);
+            //else
+                //str.append(dataset.getItemAttributesInt()[itemsArray[i]] + " = " + dataset.getItemValuesObj[itemsArray[i]]);
+            
+
+            if(i < itemsArray.length-1)
+                str.append(",");
+            i++;
+        } while (i < itemsArray.length);
+        int[] result = Evaluation.getPositiveAndNegativeCount(this, dataset);
+        int falsePositive = result[0];
+        int truePositive = result[1];
+
+        str.append("} -> ");
+        str.append(this.quality);
+        str.append("(");
+        str.append(truePositive);
+        str.append("p,");
+        str.append(falsePositive);
+        str.append("n)");  
+        str.append("(conf=");
+        //str.append(DPinfo.conf(this));
+        str.append(")");
+        
+        return str.toString();
     }
 
     // Comparations

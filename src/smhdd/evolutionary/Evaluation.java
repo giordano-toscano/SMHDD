@@ -10,7 +10,6 @@ import smhdd.data.D;
 import smhdd.data.Pattern;
 
 public final class Evaluation {
-
     private static String evaluationMetric;
     private static byte similarityMeasure;
     private static float minSimilarity;
@@ -21,17 +20,16 @@ public final class Evaluation {
     public static void evaluatePopulation(Pattern[] population, D dataset){
         int populationSize = population.length;
         IntStream.range(0, populationSize).parallel().forEach(i -> Evaluation.evaluatePattern(population[i], dataset));
-        
     }
     
     private static void evaluatePattern(Pattern p, D dataset){
         int[] result = Evaluation.getPositiveAndNegativeCount(p, dataset);
         int fp = result[0];
         int tp = result[1];
-        p.setQuality(Evaluation.calculateQuality(fp, tp, dataset));
+        p.setQuality(Evaluation.calculateQuality(fp, tp, p.getItems().size(), dataset));
     }
 
-    private static int[] getPositiveAndNegativeCount(Pattern p, D dataset){
+    public static int[] getPositiveAndNegativeCount(Pattern p, D dataset){
         HashSet<Integer> items = p.getItems();
         int exampleCount = dataset.getExampleCount();
         double[][] examples = dataset.getExamples();
@@ -69,6 +67,7 @@ public final class Evaluation {
                 negativeCoverageArray[negativeArrayIndex++] = isCovered;
         }      
         return new boolean[][]{negativeCoverageArray, positiveCoverageArray};
+    
     }
 
     private static boolean isExampleCoveredByPattern(D dataset, HashSet<Integer> items, double[] example){
@@ -120,21 +119,16 @@ public final class Evaluation {
         IntStream.range(0, totalArray.length).parallel().forEach(i -> Evaluation.setCoverageArraysInPattern(totalArray[i], dataset));
     }
 
-    private static double calculateQuality(int fp, int tp, D dataset){
+    private static double calculateQuality(int fp, int tp, int patternSize, D dataset){
         double quality = 0.0;
 
         switch(Evaluation.evaluationMetric){
             case Const.METRIC_QG -> quality = Evaluation.calculateQg(tp, fp);
             case Const.METRIC_WRACC -> quality = Evaluation.calculateWRAcc(tp, fp, dataset);
             case Const.METRIC_WRACC_NORMALIZED -> quality = Evaluation.calculateWRAccN(tp, fp, dataset);
-            //case Const.METRIC_WRACC_OVER_SIZE -> quality = Evaluation.calculateWRAcc(tp, fp, dataset) / p.getItems().size();
+            case Const.METRIC_WRACC_OVER_SIZE -> quality = Evaluation.calculateWRAcc(tp, fp, dataset) / patternSize;
             case Const.METRIC_SUB -> quality = Evaluation.calculateSub(tp, fp);
-            // case Evaluation.METRICA_AVALIACAO_CHI_QUAD:
-            //     quality = Evaluation.chi_quad(tp, fp);
-            //     break;
-            // case Evaluation.METRICA_AVALIACAO_CHI_QUAD:
-            //     quality = Evaluation.chi_quad(tp, fp);
-            //     break;
+
         }
         return quality;
     }   
@@ -154,19 +148,8 @@ public final class Evaluation {
         return wracc;
     }
     
-    private static double calculateWRAccN(int TP, int FP, D dataset){
-        int globalExampleCount = dataset.getExampleCount();
-        int globalPositiveExampleCount = dataset.getPositiveExampleCount();
-
-        if(TP==0 && FP==0){
-            return 0.0;
-        }
-        double sup = (double)(TP+FP) / (double)globalExampleCount;
-        double conf = (double)TP / (double)(TP+FP);
-        double confD = (double)globalPositiveExampleCount / (double)globalExampleCount;
-        double wracc = sup * ( conf  - confD);
-                       
-        return 4 * wracc;
+    private static double calculateWRAccN(int TP, int FP, D dataset){             
+        return 4 * calculateWRAcc(TP, FP, dataset);
     }
     
     private static double calculateQg(int TP, int FP){
@@ -280,4 +263,108 @@ public final class Evaluation {
     public static float getMinSimilarity(){
         return Evaluation.minSimilarity;
     }
+
+    // Method 'getPositiveAndNegativeCoverageArrays' option 1 using IntStream
+    // private static boolean[][] getPositiveAndNegativeCoverageArrays(Pattern p, D dataset) {
+    //     HashSet<Integer> items = p.getItems();
+    //     int exampleCount = dataset.getExampleCount();
+    //     double[][] examples = dataset.getExamples();
+    //     boolean[] labels = dataset.getLabels();
+
+    //     boolean[] positiveCoverageArray = new boolean[dataset.getPositiveExampleCount()];
+    //     boolean[] negativeCoverageArray = new boolean[dataset.getNegativeExampleCount()];
+
+    //     // Step 2: Parallel computation with fixed indices
+    //     IntStream.range(0, exampleCount).parallel().forEach(i -> {
+    //         boolean isCovered = Evaluation.isExampleCoveredByPattern(dataset, items, examples[i]);
+
+    //         if (labels[i]) {
+    //             positiveCoverageArray[positiveIndices[i]] = isCovered;
+    //         } else {
+    //             negativeCoverageArray[negativeIndices[i]] = isCovered;
+    //         }
+    //     });
+
+    //     return new boolean[][]{negativeCoverageArray, positiveCoverageArray};
+    // }
+    // public static void setPositiveAndNegativeIndexes(D dataset){
+    //     boolean[] labels = dataset.getLabels();
+    //     // Step 1: Precompute indices
+    //     Evaluation.positiveIndices = new int[dataset.getExampleCount()];
+    //     Evaluation.negativeIndices = new int[dataset.getExampleCount()];
+
+    //     int positiveIndex = 0, negativeIndex = 0;
+    //     for (int i = 0; i < dataset.getExampleCount(); i++) {
+    //         if (labels[i]) 
+    //             positiveIndices[i] = positiveIndex++;
+    //         else 
+    //             negativeIndices[i] = negativeIndex++;
+    //     }
+    // }
+
+    // Method 'getPositiveAndNegativeCoverageArrays' option 2 using ForkJoinPool
+    // static class EvaluatePopulationTask extends RecursiveAction {
+    //     private final Pattern pattern;
+    //     private final int start, end;
+    //     private final D dataset;
+    //     public static boolean[] positiveCoverageArray = null;
+    //     public static boolean[] negativeCoverageArray = null;
+    //     // Global atomic counters to track the next free index in each array.
+
+    //     public EvaluatePopulationTask(Pattern pattern, int start, int end, D dataset) {
+    //         this.pattern = pattern;
+    //         this.start = start;
+    //         this.end = end;
+    //         this.dataset = dataset;
+    //     }
+
+    //     @Override
+    //     protected void compute() {
+    //         if (end - start <= THRESHOLD) { // Directly process small chunks
+    //             boolean[] labels = dataset.getLabels();
+    //             double[][] examples = dataset.getExamples();
+    //             for (int i = start; i < end; i++) {
+    //                 boolean isCovered = Evaluation.isExampleCoveredByPattern(dataset, pattern.getItems(), examples[i]);
+    //                 if (labels[i]) 
+    //                     positiveCoverageArray[positiveIndices[i]] = isCovered;
+    //                 else 
+    //                     negativeCoverageArray[negativeIndices[i]] = isCovered;    
+    //             }
+    //         } else {
+    //             int mid = (start + end) / 2;
+    //             EvaluatePopulationTask leftTask = new EvaluatePopulationTask(pattern, start, mid, dataset);
+    //             EvaluatePopulationTask rightTask = new EvaluatePopulationTask(pattern, mid, end, dataset);
+                
+    //             invokeAll(leftTask, rightTask); // Parallel execution
+    //         }
+    //     }
+    // }
+
+    // public static void getPositiveAndNegativeCoverageArrays(Pattern p, D dataset) {
+    //     int exampleCount = dataset.getExampleCount();
+    //     boolean[] positiveCoverageArray = new boolean[dataset.getPositiveExampleCount()];
+    //     boolean[] negativeCoverageArray = new boolean[dataset.getNegativeExampleCount()];
+    //     p.setNegativeCoverageArray(negativeCoverageArray);
+    //     p.setPositiveCoverageArray(positiveCoverageArray);
+
+
+    //     EvaluatePopulationTask.positiveCoverageArray = p.getPositiveCoverageArray();
+    //     EvaluatePopulationTask.negativeCoverageArray = p.getNegativeCoverageArray();
+    //     Evaluation.pool.invoke(new EvaluatePopulationTask(p, 0, exampleCount, dataset));
+    // }
+
+    // public static void setPositiveAndNegativeIndexes(D dataset){
+    //     boolean[] labels = dataset.getLabels();
+    //     // Step 1: Precompute indices
+    //     Evaluation.positiveIndices = new int[dataset.getExampleCount()];
+    //     Evaluation.negativeIndices = new int[dataset.getExampleCount()];
+
+    //     int positiveIndex = 0, negativeIndex = 0;
+    //     for (int i = 0; i < dataset.getExampleCount(); i++) {
+    //         if (labels[i]) 
+    //             positiveIndices[i] = positiveIndex++;
+    //         else 
+    //             negativeIndices[i] = negativeIndex++;
+    //     }
+    // }
 }

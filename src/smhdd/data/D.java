@@ -1,19 +1,17 @@
 package smhdd.data;
 
-import java.io.BufferedReader;
+import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Scanner;
 
 public class D {
 
     private String name; // dataset name
-
-    private String targetValue = "\"p\"";
-    //private String targetValue = "p";
     private double[][] numericalColumns;
     private double[][] examples;
     private boolean[] labels;
@@ -21,7 +19,6 @@ public class D {
     private byte[] attributeTypes;
 
     // Items
-    private int[] items;
     private String[] itemAttributesStr;
     private Object[] itemValuesObj; 
     private int[] itemAttributesInt; 
@@ -34,37 +31,94 @@ public class D {
     private int positiveExampleCount;
     private int negativeExampleCount;
 
-    public D(String path, String delimiter) throws IOException{
+    // Constructors
+    public D(String path, String delimiter, byte[] attributeTypes, String targetValue) throws IOException{
+        this.attributeTypes = attributeTypes;
         String[][] examplesStr = this.loadFile(path, delimiter);
         this.generateItems(examplesStr);
         this.convertExamplesFromStrToDouble(examplesStr);
-        this.extractLabels(examplesStr);
+        this.extractLabels(examplesStr, targetValue);
         this.extractNumericalColumns();
     }
+    public D(String path, String delimiter, byte[] attributeTypes) throws IOException{
+        this(path, delimiter, attributeTypes, "p"); // "\"p\""
+    }
+    public D(String path, String delimiter, String targetValue) throws IOException{
+        this(path, delimiter, null, targetValue);
+    }
+    public D(String path, String delimiter) throws IOException{
+        this(path, delimiter, null, "p");
+    }
 
-    private String[][] loadFile(String filePath, String delimiter) throws IOException{    
-        List<String[]> data = new ArrayList<>();
-        try (BufferedReader br = new BufferedReader(new FileReader(filePath))) {
-            String line;
-            // column names in the first line
-            line = br.readLine();
-            this.variableNames = line.split(delimiter);
+    // Main Methods
+    // private String[][] loadFile(String filePath, String delimiter) throws IOException{    
+    //     List<String[]> data = new ArrayList<>();
+    //     try (BufferedReader br = new BufferedReader(new FileReader(filePath))) {
+    //         String line;
+    //         // column names in the first line
+    //         line = br.readLine();
+    //         this.variableNames = line.split(delimiter);
 
-            while ((line = br.readLine()) != null) {
-                // split the line by commas (or other delimiter if necessary)
-                data.add(line.split(delimiter));
-            }
+    //         while ((line = br.readLine()) != null) {
+    //             // split the line by commas (or other delimiter if necessary)
+    //             data.add(line.split(delimiter));
+    //         }
+    //     }
+    //     // convert List<String[]> to String[][]
+    //     String[][] exampleStrMatrix = data.toArray(String[][]::new);
+
+    //     // initializing attributes
+    //     this.attributeCount = this.variableNames.length - 1;
+    //     this.exampleCount = exampleStrMatrix.length;
+    //     this.attributeTypes = this.attributeTypes == null ? detectVariableTypes() : this.attributeTypes;
+
+    //     return exampleStrMatrix;
+    // }
+
+        private String[][] loadFile(String filePath, String delimiter) throws FileNotFoundException{
+        //Lendo arquivo no formato padrão
+        Scanner scanner = new Scanner(new FileReader(filePath))
+                       .useDelimiter("\\n");
+        ArrayList<String[]> dadosString = new ArrayList<>();        
+              
+        
+        String[] palavras = filePath.split("\\\\");
+        if(palavras.length == 1){
+            palavras = filePath.split("/");//Caso separador de pastas seja / e  não \\
         }
-        // convert List<String[]> to String[][]
-        String[][] exampleStrMatrix = data.toArray(String[][]::new);
-
+        
+        this.name = palavras[palavras.length-1].replace(".CSV", "");//Nome do arquivo é a última palavra (caso .CSV)
+        this.name = this.name.replace(".csv", "");//(caso .csv)
+                
+        this.variableNames = scanner.next().split(delimiter); //1º linha: nome das variáveis
+        //Lipando nomes dos atributos
+        for(int i = 0; i < this.variableNames.length; i++){
+            this.variableNames[i] = this.variableNames[i].replaceAll("[\"\r\']", "");
+        }
+        
+        this.attributeCount = this.variableNames.length-1; //último atributo é o rótulo
+        while (scanner.hasNext()) {
+            dadosString.add(scanner.next().split(delimiter));
+        }
+        this.exampleCount = dadosString.size();
+        
+        String[][] dadosStr = new String[this.exampleCount][this.attributeCount+1];
+        for(int i = 0; i < dadosString.size(); i++){
+            String[] exemploBase = dadosString.get(i);//recebe linha de dados
+            for(int j = 0; j < exemploBase.length; j++){
+                dadosStr[i][j] = exemploBase[j].replaceAll("[\"\r\']", "");
+            }
+        }       
         // initializing attributes
         this.attributeCount = this.variableNames.length - 1;
-        this.exampleCount = exampleStrMatrix.length;
+        this.exampleCount = dadosStr.length;
         this.attributeTypes = this.attributeTypes == null ? detectVariableTypes() : this.attributeTypes;
 
-        return exampleStrMatrix;
+        scanner.close(); // COLOQUEI
+        return dadosStr;
     }
+
+
 
     private byte[] detectVariableTypes(){
         byte[] types = new byte[this.variableNames.length-1];
@@ -112,9 +166,6 @@ public class D {
                 valueIndex++;
             }
         }
-        this.items = new int[itemCount];
-        for(int l = 0; l < itemCount; l++)
-            this.items[l] = l;
     }
 
     private List<double[]> transformNumericalColumnIntoIntervals(String[][] examplesStr, int attributeIndex){
@@ -168,13 +219,13 @@ public class D {
         }
     }
 
-    private void extractLabels(String[][] examplesStrMatrix){
+    private void extractLabels(String[][] examplesStrMatrix, String targetValue){
         this.labels = new boolean[this.exampleCount];
         int labelIndex = this.variableNames.length - 1;
 
         for(int i = 0; i < this.exampleCount; i++){
             String label = examplesStrMatrix[i][labelIndex];
-            boolean isPositive = label.equals(this.targetValue);
+            boolean isPositive = label.equals(targetValue);
             // counting the number of positive and negative examples
             if(isPositive){
                 this.positiveExampleCount++;
@@ -187,7 +238,7 @@ public class D {
     }
 
     // Utils //
-    public static boolean isNumber(String str) {
+    private static boolean isNumber(String str) {
         if (str == null || str.isEmpty()) return false;
 
         int len = str.length();
@@ -286,6 +337,13 @@ public class D {
         }
         return intervals;
     }
+    public static void imprimirRegras(D dataset, Pattern[] p){
+        Pattern emptyPattern = new Pattern(new HashSet<Integer>());
+        System.out.println(emptyPattern.display(dataset));
+        for(int i = 0; i < p.length; i++){
+            System.out.println(p[i].display(dataset));        
+        }        
+    }
 
     // GETs
     public String getName(){
@@ -314,10 +372,6 @@ public class D {
 
     public int getItemCount(){
         return this.itemCount;
-    }
-
-    public int[] getItems(){
-        return this.items;
     }
 
     public double[][] getNumericalColumns(){
@@ -355,6 +409,14 @@ public class D {
     // SETs
     public void setAttributeTypes(byte[] types){
         this.attributeTypes = this.attributeTypes == null ? types : this.attributeTypes;
+    }
+
+    public String retrieveItemValueAsString(int itemIndex){
+        int attributeIndex = this.getItemAttributesInt()[itemIndex];
+        if(this.getAttributeTypes()[attributeIndex] == Const.TYPE_NUMERICAL){
+        }
+        return "";
+
     }
 
     // Main method
@@ -415,99 +477,3 @@ public class D {
 
 }
 
-/*
- * 
- * public class CSVToArrayOptimized {
-    public static String[][] readCSV(String filePath) throws IOException {
-        List<String[]> data = new ArrayList<>();
-        try (BufferedReader br = new BufferedReader(new FileReader(filePath))) {
-            String line;
-            while ((line = br.readLine()) != null) {
-                data.add(parseLine(line));
-            }
-        }
-        return data.toArray(new String[0][]);
-    }
-
-    // Manually parse a CSV line into fields
-    private static String[] parseLine(String line) {
-        List<String> fields = new ArrayList<>();
-        StringBuilder field = new StringBuilder();
-        boolean inQuotes = false;
-
-        for (char ch : line.toCharArray()) {
-            if (ch == '"') {
-                // Toggle the inQuotes flag if a double-quote is encountered
-                inQuotes = !inQuotes;
-            } else if (ch == ',' && !inQuotes) {
-                // Add the field if we hit a comma outside quotes
-                fields.add(field.toString());
-                field.setLength(0); // Clear the StringBuilder for the next field
-            } else {
-                // Append the character to the current field
-                field.append(ch);
-            }
-        }
-        // Add the last field
-        fields.add(field.toString());
-        return fields.toArray(new String[0]);
-    }
- */
-
-/* 
- private void labelExamples(String[][] examplesStrMatrix, Example[] exampleLists){
-
-    int labelIndex = this.variableNames.length - 1;
-
-    //Counting the number of positive and negative examples
-    this.positiveExampleCount = 0;
-    this.negativeExampleCount = 0;
-
-    for(int i = 0; i < this.exampleCount; i++){
-        String label = examplesStrMatrix[i][labelIndex];
-        if(label.equals(this.targetValue)){
-            this.positiveExampleCount++;
-        }else{
-            this.negativeExampleCount++;
-        }
-        exampleLists[i].setLabel(label);
-    }
-    
-    // initializing Dp e Dn
-    this.dp = new int[this.positiveExampleCount][this.attributeCount];
-    this.dn = new int[this.negativeExampleCount][this.attributeCount];
-    
-    int indiceDp = 0;
-    int indiceDn = 0;
-    for(int i = 0; i < this.exampleCount; i++){
-        label = examplesStrMatrix[i][labelIndex];
-
-        if(label.equals(targetValue)){
-            dp[indiceDp] = examplesIntMatrix[i];
-            indiceDp++;
-        }else{
-            dn[indiceDn] = examplesIntMatrix[i];
-            indiceDn++;            
-        }
-    }
-    // PRINT AREA
-    System.out.println("PRINT Dp");
-    int[][] array = dp;
-    for (int[] row : array) {
-        for (int cell : row) {
-            System.out.print(cell + "\t");
-        }
-        System.out.println();
-    }
-
-    System.out.println("PRINT Dn");
-    array = dn;
-    for (int[] row : array) {
-        for (int cell : row) {
-            System.out.print(cell + "\t");
-        }
-        System.out.println();
-    }
-    // END PRINT AREA
-}
-*/
