@@ -17,6 +17,10 @@ public final class NumericalItemMemory {
         inverse = new HashMap<>(2*size,1.0f);
         NumericalItemMemory.itemIndex = initialItemIndex;
     }
+    public NumericalItemMemory(int size) {
+        forward = new HashMap<>(2*size,1.0f);
+        inverse = new HashMap<>(2*size,1.0f);
+    }
 
     /**
      * Associates the specified key with the specified value in this bidirectional map.
@@ -38,6 +42,18 @@ public final class NumericalItemMemory {
         return alreadyExistingKey;
     }
 
+    public Integer put(Integer key, NumericalItem value) {
+        Integer alreadyExistingKey = inverse.putIfAbsent(value, key);
+        if(alreadyExistingKey == null){
+            forward.put(key, value);
+            Integer keyPut = key;
+            itemIndex =  keyPut + 1;
+            return keyPut;
+        }
+        
+        return alreadyExistingKey;
+    }
+
     /**
      * Retrieves the value associated with the specified key.
      *
@@ -46,6 +62,16 @@ public final class NumericalItemMemory {
      */
     public NumericalItem getNumericalItem(int key) {
         return forward.get(key);
+    }
+
+    /**
+     * Retrieves the attribute index associated with the specified item.
+     *
+     * @param key the key
+     * @return the attribute index, or -1 if not found
+     */
+    public int getAttributeIndex(int key) {
+        return forward.get(key).getAttributeIndex();
     }
 
     /**

@@ -19,10 +19,11 @@ public class D {
     private byte[] attributeTypes;
 
     // Items
-    private String[] itemAttributesStr;
-    private Object[] itemValuesObj; 
-    private int[] itemAttributesInt; 
-    private int[] itemValuesInt; 
+    private String[] itemAttributes;
+    private String[] categoricalItemValues; 
+    private int[] itemAttributeIndexes; 
+    private int[] categoricalItemValueIndexes; 
+    private NumericalItemMemory numericalItemMemory;
 
     // Counters
     private int itemCount;
@@ -32,22 +33,21 @@ public class D {
     private int negativeExampleCount;
 
     // Constructors
-    public D(String path, String delimiter, byte[] attributeTypes, String targetValue) throws IOException{
-        this.attributeTypes = attributeTypes;
-        String[][] examplesStr = this.loadFile(path, delimiter);
-        this.generateItems(examplesStr);
+    public D(String path, String delimiter, String targetValue, byte datasetType, int numBins) throws IOException{
+        String[][] examplesStr = this.loadFile(path, delimiter, datasetType);
+        this.generateItems(examplesStr, numBins);
         this.convertExamplesFromStrToDouble(examplesStr);
         this.extractLabels(examplesStr, targetValue);
         this.extractNumericalColumns();
     }
-    public D(String path, String delimiter, byte[] attributeTypes) throws IOException{
-        this(path, delimiter, attributeTypes, "p"); // "\"p\""
-    }
     public D(String path, String delimiter, String targetValue) throws IOException{
-        this(path, delimiter, null, targetValue);
+        this(path, delimiter, targetValue, Const.DATASET_TYPE_CATEGORICAL, Const.DEFAULT_NUM_BINS);
     }
     public D(String path, String delimiter) throws IOException{
-        this(path, delimiter, null, "p");
+        this(path, delimiter, "p", Const.DATASET_TYPE_CATEGORICAL , Const.DEFAULT_NUM_BINS);
+    }
+    public D(String path, String delimiter, int numBins) throws IOException{
+        this(path, delimiter, "p", Const.DATASET_TYPE_AUTO_DETECT, numBins);
     }
 
     // Main Methods
@@ -75,7 +75,7 @@ public class D {
     //     return exampleStrMatrix;
     // }
 
-        private String[][] loadFile(String filePath, String delimiter) throws FileNotFoundException{
+        private String[][] loadFile(String filePath, String delimiter, byte datasetType) throws FileNotFoundException{
         //Lendo arquivo no formato padrão
         Scanner scanner = new Scanner(new FileReader(filePath))
                        .useDelimiter("\\n");
@@ -112,24 +112,34 @@ public class D {
         // initializing attributes
         this.attributeCount = this.variableNames.length - 1;
         this.exampleCount = dadosStr.length;
-        this.attributeTypes = this.attributeTypes == null ? detectVariableTypes() : this.attributeTypes;
+        this.attributeTypes = datasetType == Const.DATASET_TYPE_CATEGORICAL ? retrieveAllCategoricalVariableTypes() : retrieveAutoDetectedVariableTypes(dadosStr);
 
-        scanner.close(); // COLOQUEI
+        scanner.close(); 
         return dadosStr;
     }
 
-
-
-    private byte[] detectVariableTypes(){
+    private byte[] retrieveAutoDetectedVariableTypes(String[][] examplesStr){
         byte[] types = new byte[this.variableNames.length-1];
         for(int i = 0; i < types.length; i++){
-            types[i] = Const.TYPE_CATEGORICAL;
+            if (this.isNumber(examplesStr[0][i])) {
+                types[i] = Const.TYPE_NUMERICAL;
+            }else{
+                types[i] = Const.TYPE_CATEGORICAL;
+            }
         }
         return types;
     }
 
+    private byte[] retrieveAllCategoricalVariableTypes(){
+        byte[] types = new byte[this.variableNames.length-1];
+        for(int i = 0; i < types.length; i++)
+            types[i] = Const.TYPE_CATEGORICAL;
+        return types;
+    }
 
-    private void generateItems(String[][] examplesStr){
+
+
+    private void generateItems(String[][] examplesStr, int numBins){
         this.itemCount = 0;
                 
         @SuppressWarnings("unchecked")
@@ -140,27 +150,35 @@ public class D {
             if(this.attributeTypes[i] == Const.TYPE_CATEGORICAL) // categorical attribute
                 distinctValuesSingleAttribute.addAll(this.gatherCategoricalColumnValues(examplesStr, i));
             else                                            // numerical attribute
-                distinctValuesSingleAttribute.addAll(this.transformNumericalColumnIntoIntervals(examplesStr, i));
+                distinctValuesSingleAttribute.addAll(this.transformNumericalColumnIntoIntervals(examplesStr, i, numBins));
             this.itemCount += distinctValuesSingleAttribute.size();
             distinctAttributeValues[i] = distinctValuesSingleAttribute; // adds list of distinct values of attribute i in the i-th position of the "distinctAttributeValues" array
         }
         
         // creates 2 arrays to store attributes and values in their original format (String)
-        this.itemAttributesStr = new String[itemCount];
-        this.itemValuesObj = new Object[itemCount];
+        this.itemAttributes = new String[itemCount];
+        this.categoricalItemValues = new String[itemCount];
         // creates another 2 arrays to store attributes and values mapped to integer values
-        this.itemAttributesInt = new int[itemCount];
-        this.itemValuesInt = new int[itemCount];
+        this.itemAttributeIndexes = new int[itemCount];
+        this.categoricalItemValueIndexes = new int[itemCount];
+
+        this.numericalItemMemory = new NumericalItemMemory(itemCount);
 
         int itemIndex = 0;
         for(int attributeIndex = 0; attributeIndex < this.attributeCount; attributeIndex++){
             HashSet<Object> distinctValues = distinctAttributeValues[attributeIndex];
             int valueIndex = 0;
-            for(Object valueStr : distinctValues){
-                itemAttributesStr[itemIndex] = this.variableNames[attributeIndex]; 
-                itemValuesObj[itemIndex] = valueStr;
-                itemAttributesInt[itemIndex] = attributeIndex;
-                itemValuesInt[itemIndex] = valueIndex;
+            for(Object value : distinctValues){
+                if(this.attributeTypes[attributeIndex] == Const.TYPE_CATEGORICAL){
+                    categoricalItemValues[itemIndex] =  (String) value;
+                    categoricalItemValueIndexes[itemIndex] = valueIndex;
+                }else{
+                    double[] interval = (double[]) value;
+                    this.numericalItemMemory.put(itemIndex, new NumericalItem(attributeIndex, interval[0], interval[1]));
+                }
+
+                itemAttributes[itemIndex] = this.variableNames[attributeIndex];
+                itemAttributeIndexes[itemIndex] = attributeIndex;
 
                 itemIndex++;
                 valueIndex++;
@@ -168,11 +186,11 @@ public class D {
         }
     }
 
-    private List<double[]> transformNumericalColumnIntoIntervals(String[][] examplesStr, int attributeIndex){
+    private List<double[]> transformNumericalColumnIntoIntervals(String[][] examplesStr, int attributeIndex, int numBins){
         String[] array = new String[this.exampleCount]; 
         for(int i = 0; i < this.exampleCount; i++)
             array[i] = examplesStr[i][attributeIndex];
-        double[][] result = D.equalFrequencyBins(array, 3);
+        double[][] result = D.equalFrequencyBins(array, numBins);
         List<double[]> list = new ArrayList<>();
         list.addAll(Arrays.asList(result));
         return list;
@@ -189,11 +207,11 @@ public class D {
 
         this.examples = new double[this.exampleCount][this.attributeCount]; // matrix of examples in integer format
         int itemIndex = 0;
-        for (int attributeIndex : this.itemAttributesInt){
+        for (int attributeIndex : this.itemAttributeIndexes){
             if(this.attributeTypes[attributeIndex] == Const.TYPE_CATEGORICAL){ // categorical attribute
                 for(int i = 0; i < this.exampleCount; i++){ 
-                    if(examplesStr[i][attributeIndex].equals(this.itemValuesObj[itemIndex])){
-                        examples[i][attributeIndex] = this.itemValuesInt[itemIndex];
+                    if(examplesStr[i][attributeIndex].equals(this.categoricalItemValues[itemIndex])){
+                        examples[i][attributeIndex] = this.categoricalItemValueIndexes[itemIndex];
                     }
                 }
             }else{ // numerical attribute
@@ -211,10 +229,15 @@ public class D {
                 numericalCount++;
         }
         this.numericalColumns = new double[numericalCount][this.exampleCount];
-        for(int i =  0; i < this.exampleCount; i++){
-            for (int j = 0; j < this.attributeCount; j++){  
-                if(this.attributeTypes[j] == Const.TYPE_NUMERICAL) 
-                    this.numericalColumns[j][i] = this.examples[i][j];
+        int numericalColumnsRowIndex = 0;
+
+        for(int j =  0; j < this.attributeCount; j++){
+
+            if(this.attributeTypes[j] == Const.TYPE_NUMERICAL){
+
+                for (int i = 0; i < this.exampleCount; i++)
+                    this.numericalColumns[numericalColumnsRowIndex][i] = this.examples[i][j];
+                numericalColumnsRowIndex++;
             }
         }
     }
@@ -238,7 +261,7 @@ public class D {
     }
 
     // Utils //
-    private static boolean isNumber(String str) {
+    private boolean isNumber(String str) {
         if (str == null || str.isEmpty()) return false;
 
         int len = str.length();
@@ -260,19 +283,17 @@ public class D {
         return hasDigit; // Must contain at least one digit
     }
 
-    public static void displayExamplesTransposed(double[][] matrix) {
+    private static void displayTransposedMatrix(double[][] matrix) {
         // Iterate over columns first
         for (int col = 0; col < matrix[0].length; col++) {
             // Iterate over rows
-            for (double[] matrix1 : matrix) {
+            for (double[] matrix1 : matrix) 
                 System.out.print(matrix1[col] + "\t");
-            }
             System.out.println();
         }
     }
 
-
-    public static double[][] equalFrequencyBins(String[] stringArray, int numBins) {
+    private static double[][] equalFrequencyBins(String[] stringArray, int numBins) {
 
         if (stringArray == null) {
             throw new IllegalArgumentException("Input array cannot be null.");
@@ -337,12 +358,44 @@ public class D {
         }
         return intervals;
     }
-    public static void imprimirRegras(D dataset, Pattern[] p){
-        Pattern emptyPattern = new Pattern(new HashSet<Integer>());
+
+    public static double[][] equalWidthDiscretization(double[] array, int numBins) {
+        int n = array.length;
+        if (n == 0 || numBins <= 0) throw new IllegalArgumentException("Invalid input parameters");
+
+        // Find min and max in a single pass (O(n))
+        double min = array[0], max = array[0];
+        for (int i = 1; i < n; i++) {
+            if (array[i] < min) min = array[i];
+            if (array[i] > max) max = array[i];
+        }
+
+        double width = (max - min) / numBins;
+        if (width == 0) return new double[][]{{min, max}}; // All values are the same
+
+        double[][] intervals = new double[numBins][2];
+
+        // Compute bin intervals
+        for (int i = 0; i < numBins; i++) {
+            intervals[i][0] = min + i * width;          // Lower bound
+            intervals[i][1] = min + (i + 1) * width;    // Upper bound
+        }
+
+        return intervals;
+    }
+
+    public static void imprimirRegras(D dataset, Pattern[] patterns){
+        Pattern emptyPattern = new Pattern(new HashSet<>());
         System.out.println(emptyPattern.display(dataset));
-        for(int i = 0; i < p.length; i++){
-            System.out.println(p[i].display(dataset));        
-        }        
+        for (Pattern pattern : patterns) 
+            System.out.println(pattern.display(dataset));     
+    }
+
+    public String retrieveItemValueAsString(int itemIndex){
+        int attributeIndex = this.getItemAttributeIndexes()[itemIndex];
+        if(this.getAttributeTypes()[attributeIndex] == Const.TYPE_NUMERICAL){
+        }
+        return "";
     }
 
     // GETs
@@ -382,20 +435,20 @@ public class D {
         return this.examples;
     }
 
-    public int[] getItemAttributesInt() {
-        return this.itemAttributesInt;
+    public int[] getItemAttributeIndexes() {
+        return this.itemAttributeIndexes;
     }
 
-    public int[] getItemValuesInt() {
-        return this.itemValuesInt;
+    public int[] getCategoricalItemValueIndexes() {
+        return this.categoricalItemValueIndexes;
     }
 
-    public String[] getItemAttributesStr() {
-        return this.itemAttributesStr;
+    public String[] getItemAttributes() {
+        return this.itemAttributes;
     }
 
-    public Object[] getItemValuesObj() {
-        return this.itemValuesObj;
+    public String[] getCategoricalItemValues() {
+        return this.categoricalItemValues;
     }
 
     public byte[] getAttributeTypes(){
@@ -406,27 +459,16 @@ public class D {
         return this.labels;
     }
 
-    // SETs
-    public void setAttributeTypes(byte[] types){
-        this.attributeTypes = this.attributeTypes == null ? types : this.attributeTypes;
-    }
-
-    public String retrieveItemValueAsString(int itemIndex){
-        int attributeIndex = this.getItemAttributesInt()[itemIndex];
-        if(this.getAttributeTypes()[attributeIndex] == Const.TYPE_NUMERICAL){
-        }
-        return "";
-
+    public NumericalItemMemory getNumericalItemMemory(){
+        return this.numericalItemMemory;
     }
 
     // Main method
     public static void main(String[] args) throws IOException {
-        // String directory = "datasets/";
-        // String file = "toy_example_en_US.csv";
-        // String filepath = directory+file;
-        // D dataset  = new D(filepath, ",");
-        // //byte[] attributeTypes = {Const.TYPE_CATEGORICAL, Const.TYPE_CATEGORICAL, Const.TYPE_NUMERICAL};
-        // //dataset.setAttributeTypes(attributeTypes);
+        String directory = "datasets/";
+        String file = "alon.csv";
+        String filepath = directory+file;
+        D dataset  = new D(filepath, ",");
 
         // System.out.println("PRINT nomeVariaveis:");
         // for (String row : dataset.getVariableNames()) {
@@ -435,22 +477,24 @@ public class D {
         // }
 
         // System.out.println("\nPRINT itemAtributosStr");
-        // for (String cell : dataset.getItemAttributesStr()) {
+        // for (String cell : dataset.getItemAttributes()) {
         //     System.out.print(cell + "\t");
         // }
         // System.out.println("\nPRINT itemAtributosInt");
-        // for (int cell : dataset.getItemAttributesInt()) {
+        // for (int cell : dataset.getItemAttributeIndexes()) {
         //     System.out.print(cell + "\t");
         // }
 
         // System.out.println("\nPRINT itemValuesObj");
-        // for (Object cell : dataset.getItemValuesObj()) {
+        // for (Object cell : dataset.getCategoricalItemValues()) {
         //     System.out.print(cell + "\t");
         // }
         // System.out.println("\nPRINT itemValuesInt");
-        // for (int cell : dataset.getItemValuesInt()) {
+        // for (int cell : dataset.getCategoricalItemValueIndexes()) {
         //     System.out.print(cell + "\t");
         // }
+        // System.out.println("\nPRINT NumericalValues");
+        // System.out.println(dataset.getNumericalItemMemory());
 
         // System.out.println("\n\nBEFORE SORTING");
     
@@ -472,7 +516,111 @@ public class D {
         // for (Example row : dataset.getExampleLists()) {
         //     row.display();
         // }
+        double[] doubleArray = {
+            -0.530,
+            0.858,
+            0.510,
+            0.800,
+           -0.680,
+           -0.290,
+            3.020,
+            1.150,
+            0.000,
+            0.490,
+            1.160,
+            0.350,
+           -0.430,
+            2.300,
+           -2.230,
+            0.390,
+           -1.460,
+           -1.220,
+           -1.990,
+           -1.690,
+           -1.340,
+            1.160,
+           -0.100,
+            2.120,
+            1.750,
+            0.570,
+           -2.080,
+           -1.940,
+           -2.370,
+           -2.570,
+           -3.760,
+            1.980,
+           -2.320,
+           -2.830,
+            1.320,
+            0.620,
+            1.640,
+           -0.350,
+            0.820,
+           -0.870,
+           -0.800,
+           -0.640,
+            0.732,
+            1.530,
+            1.050,
+            1.440,
+           -0.520,
+            0.680,
+           -1.630,
+           -0.320,
+           -1.860,
+           -1.740,
+           -2.530,
+            0.880,
+           -0.850,
+            0.290,
+            0.470,
+            0.540,
+            0.560,
+            1.160,
+            0.360,
+           -0.890,
+           -1.570,
+           -0.690,
+           -1.700,
+            1.080,
+           -0.540,
+           -0.770,
+            1.230,
+            0.860,
+            1.080,
+            0.970,
+            0.700,
+            2.310,
+            0.000,
+           -1.680,
+            2.540,
+            1.530,
+            2.060,
+            1.790,
+           -1.770,
+           -1.700,
+           -0.011,
+           -1.300,
+            0.550
+        };
+        Arrays.sort(doubleArray);
+        displayDoubleArray(equalFrequencyDiscretization(doubleArray, 2));
+        displayDoubleArray(equalFrequencyBins(doubleArray, 2));
 
+    }
+
+    public static void displayDoubleArray(double[][] array) {
+        // Iterate through the outer array
+        for (int i = 0; i < array.length; i++) {
+            // Check if the inner array has exactly 2 elements
+            if (array[i].length == 2) {
+                // Display the two elements of the inner array
+                System.out.println("Element " + i + ": [" + array[i][0] + ", " + array[i][1] + "]");
+            } else {
+                // Handle cases where the inner array does not have exactly 2 elements
+                System.out.println("Element " + i + ": Invalid size (expected 2 elements)");
+            }
+        }
     }
 
 }

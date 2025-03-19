@@ -17,7 +17,7 @@ public class SMHDD {
 
         try {
             String directory = "datasets/";
-            String file = "matrixBinaria-Global-100-p.csv";
+            String file = "sun_og_labeled.csv";
             String filepath = directory+file;
 
             Const.random = new Random(Const.SEEDS[0]); 
@@ -36,7 +36,7 @@ public class SMHDD {
             // byte[] attributeTypes = {Const.TYPE_CATEGORICAL, Const.TYPE_CATEGORICAL, Const.TYPE_NUMERICAL};
 
             System.out.println("Loading data set...");
-            D dataset = new D(filepath, ",");
+            D dataset = new D(filepath, ",", 8);
             
             // displaying dataset info
             System.out.println(
@@ -91,17 +91,16 @@ public class SMHDD {
     }
 
     public static Pattern[] run(D dataset, int k, double maxTimeSegundos){
-        Pattern[] topK = new Pattern[k];                
-        Pattern[] population = null;
         
-        //Inicializa Pk com indivíduos vazios
+        Pattern[] topK = new Pattern[k];                
+        // Initializes top-k with empty individuals
         for(int i = 0; i < topK.length;i++){
             topK[i] = new Pattern(new HashSet<>());
         }
 
-        //Inicializa garantindo que P maior que Pk sempre! em bases pequenas isso nem sempre ocorre
-        Pattern[] populationAux = Initialization.generateDimension1Patterns(dataset); //P recebe população inicial
-
+        // Initializes ensuring that the population is larger than the top-k always! (in small datasets this is not always the case)
+        Pattern[] population;
+        Pattern[] populationAux = Initialization.generateDimension1Patterns(dataset); 
         if(populationAux.length < k){
             population = new Pattern[k];            
             for(int i = 0; i < k; i++){
@@ -121,21 +120,20 @@ public class SMHDD {
 
         int generationsWithoutImprovementCount = 0;
         boolean isFirstGeneration = true;
-        //Laço do AG
-        Pattern[] newPopulation = null;
-        Pattern[] populationBest = null;
-        
+
+        // GA Loop
         int populationSize = population.length;
-        //System.out.println("Buscas...");
-        for(int resetCount = 0; resetCount < 3; resetCount++){//Controle número de reinicializações
+
+        for(int resetCount = 0; resetCount < 3; resetCount++){ // Controls the number of resets
             if(resetCount > 0){
                 population = Initialization.initializeUsingTopK(dataset, populationSize, topK);
                 Evaluation.evaluatePopulation(population, dataset);    
             }
-        
-            double mutationRate = 0.4; //Mutação inicia em 0.4. Crossover é sempre 1-mutationTax.
-        
+
+            double mutationRate = 0.4; // Mutation rate starts at 0.4. Crossover rate is always 1-mutationRate.
+            
             while(generationsWithoutImprovementCount < 3){
+                Pattern[] newPopulation;
                 if(isFirstGeneration){
                     newPopulation = Crossover.mergeChromosomesInPopulation(population);
                     isFirstGeneration = false;  
@@ -144,18 +142,18 @@ public class SMHDD {
                 }  
                 Evaluation.evaluatePopulation(newPopulation, dataset);
         
-                populationBest = Selection.selectBest(population, newPopulation); 
+                Pattern[] populationBest = Selection.selectBest(population, newPopulation); 
                 population = populationBest;   
 
                 Evaluation.setPositiveAndNegativeCoverageArrays(topK, populationBest, dataset);
-                int newlyAddedToTopk = Selection.saveRelevantPatterns(topK, populationBest, dataset);//Atualizando Pk e coletando número de indivíduos substituídos 
+                int newlyAddedToTopk = Selection.saveRelevantPatterns(topK, populationBest, dataset); // Updating top-k and saving the number of added individuals
 
-                // Definição automática de mutação de crossover
-                if(newlyAddedToTopk > 0 && mutationRate > 0.0)//Aumenta cruzamento se Pk estiver evoluindo e se mutação não não for a menos possível.
+                // Automatic adjustment of mutation and crossover rates
+                if(newlyAddedToTopk > 0 && mutationRate > 0.0) // Increases crossover rate if top-k is evolving and the mutation rate is higher than the lower limit
                     mutationRate -= 0.2;
-                else if(newlyAddedToTopk == 0 && mutationRate < 1.0)//Aumenta mutação caso Pk não tenha evoluido e mutação não seja maior que o limite máximo.
+                else if(newlyAddedToTopk == 0 && mutationRate < 1.0) // Increases mutation rate if top-k has not improved and mutation rate is not higher than the maximum limit.
                      mutationRate += 0.2;
-                //Critério de parada: 3x sem evoluir Pk com taxa de mutação 1.0
+                // Stop criterion: 3x without top-k improvement with mutation rate 1.0
                 if(newlyAddedToTopk == 0 && mutationRate == 1.0)
                     generationsWithoutImprovementCount++;
                 else

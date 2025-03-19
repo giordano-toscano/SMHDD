@@ -7,6 +7,8 @@ import java.util.List;
 import java.util.stream.IntStream;
 import smhdd.data.Const;
 import smhdd.data.D;
+import smhdd.data.NumericalItem;
+import smhdd.data.NumericalItemMemory;
 import smhdd.data.Pattern;
 
 public final class Evaluation {
@@ -71,14 +73,23 @@ public final class Evaluation {
     }
 
     private static boolean isExampleCoveredByPattern(D dataset, HashSet<Integer> items, double[] example){
-        int[] itemAttributes = dataset.getItemAttributesInt();
-        int[] itemValues = dataset.getItemValuesInt();
+        int[] attributeIndexes = dataset.getItemAttributeIndexes();
+        int[] itemValues = dataset.getCategoricalItemValueIndexes();
+        int itemCount = dataset.getItemCount();
+        byte[] attributeTypes = dataset.getAttributeTypes();
+        NumericalItemMemory numericalMemory = dataset.getNumericalItemMemory();
         for(Integer item : items){
-            int attributeIndex = itemAttributes[item];
-            double itemValue = itemValues[item];
+            int attributeIndex = item < itemCount ? attributeIndexes[item] : numericalMemory.getAttributeIndex(item);
             double exampleAttributeValue = example[attributeIndex];
-            if(itemValue != exampleAttributeValue)
-                return false;
+            if (attributeTypes[attributeIndex] == Const.TYPE_CATEGORICAL) {
+                int itemValue = itemValues[item];
+                if(itemValue != exampleAttributeValue)
+                    return false;
+            }else{
+                NumericalItem itemValue = numericalMemory.getNumericalItem(item);
+                if(!itemValue.contains(exampleAttributeValue))
+                    return false;
+            }
         }       
         return true; 
     }
@@ -93,6 +104,7 @@ public final class Evaluation {
         }
         return endIndex;
     }
+
     public static void setCoverageArraysInPattern(Pattern p, D dataset){
         boolean[][] result = Evaluation.getPositiveAndNegativeCoverageArrays(p, dataset);
         p.setNegativeCoverageArray(result[0]);
@@ -211,7 +223,6 @@ public final class Evaluation {
         
         double valor = switch(Evaluation.similarityMeasure){
             case Const.SIMILARIDADE_JACCARD -> bothAB/(onlyA + onlyB + bothAB);
-            case Const.SIMILARIDADE_SOKAL_MICHENER -> (bothAB + neitherAB) / (onlyA + onlyB + bothAB + neitherAB);
             default -> 0;
         };
         

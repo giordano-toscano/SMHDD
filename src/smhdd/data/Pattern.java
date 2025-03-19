@@ -118,30 +118,35 @@ public class Pattern implements Comparable<Pattern> {
 
     // }
     public String display(D dataset) {
-        int[] attributeIndexes = dataset.getItemAttributesInt();
-        String[] categoricalItemAttribute = dataset.getItemAttributesStr();
-        //String[] categoricalItemValue = dataset.getItemValuesObj();
+        // Capturing useful dataset information
+        int[] attributeIndexes = dataset.getItemAttributeIndexes();
+        String[] itemAttributes = dataset.getItemAttributes();
+        String[] categoricalItemValues = dataset.getCategoricalItemValues();
+        NumericalItemMemory numericalMemory = dataset.getNumericalItemMemory();
+        int itemCount = dataset.getItemCount();
         byte[] attributeTypes = dataset.getAttributeTypes();
-        //Capturando e ordenando conteúdo
+
+        // Transforming the set of items into an array
         Integer[] itemsArray = this.items.toArray(Integer[]::new);    
         Arrays.sort(itemsArray);
 
         //Salvando em string
         StringBuilder str = new StringBuilder("{");
 
-        int i = 0;
-        do { 
-            //int attributeIndex = attributeIndexes[itemsArray[i]];    
-            //if(attributeTypes[attributeIndex] == Const.TYPE_CATEGORICAL)
-                //str.append(categoricalItemAttribute[itemsArray[i]] + " = " + dataset.getItemValuesObj[itemsArray[i]]);
-            //else
-                //str.append(dataset.getItemAttributesInt()[itemsArray[i]] + " = " + dataset.getItemValuesObj[itemsArray[i]]);
-            
-
+        for(int i = 0; i < itemsArray.length; i++){
+            int item = itemsArray[i];
+            int attributeIndex = item < itemCount ? attributeIndexes[item] : numericalMemory.getAttributeIndex(item);
+            String antecedent, consequent;
+            boolean isCategorical = attributeTypes[attributeIndex] == Const.TYPE_CATEGORICAL;
+    
+            antecedent = isCategorical ? itemAttributes[item] : itemAttributes[attributeIndex]; // Need to fix it ! 
+            consequent = isCategorical ? categoricalItemValues[item]: numericalMemory.getNumericalItem(item).toString();
+            str.append(antecedent).append(" = ").append(consequent);
+                
             if(i < itemsArray.length-1)
-                str.append(",");
-            i++;
-        } while (i < itemsArray.length);
+                str.append(", ");
+        } 
+
         int[] result = Evaluation.getPositiveAndNegativeCount(this, dataset);
         int falsePositive = result[0];
         int truePositive = result[1];

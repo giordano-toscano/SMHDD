@@ -15,6 +15,9 @@ public final class NumericalItem {
     public boolean contains(double value) {
         return value >= start && value <= end;
     }
+    public int getAttributeIndex(){
+        return this.attributeIndex;
+    }
 
     @Override
     public boolean equals(Object obj) {
@@ -31,6 +34,16 @@ public final class NumericalItem {
 
     @Override
     public String toString(){
+        StringBuilder sb = new StringBuilder();
+        sb.append("[")
+        .append(this.start)
+        .append(", ")
+        .append(this.end)
+        .append("]");
+        return sb.toString();
+    }
+
+    public String display(){
         StringBuilder sb = new StringBuilder();
         sb.append("(a:")
         .append(this.attributeIndex)

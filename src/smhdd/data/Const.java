@@ -18,6 +18,11 @@ public class Const {
     public static final String METRIC_SUB = "Sub";
 
     public final static byte SIMILARIDADE_JACCARD = 1;
-    public final static byte SIMILARIDADE_SOKAL_MICHENER = 2;
+
+    public final static byte DEFAULT_NUM_BINS = 0;
+    
+    public final static byte DATASET_TYPE_CATEGORICAL = 1;
+    public final static byte DATASET_TYPE_AUTO_DETECT = 2;
+
 
 }
