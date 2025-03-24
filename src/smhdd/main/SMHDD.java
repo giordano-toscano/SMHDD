@@ -17,7 +17,7 @@ public class SMHDD {
 
         try {
             String directory = "datasets/";
-            String file = "sun_og_labeled.csv";
+            String file = "matrixBinaria-Global-100-p.csv";
             String filepath = directory+file;
 
             Const.random = new Random(Const.SEEDS[0]); 
@@ -36,7 +36,7 @@ public class SMHDD {
             // byte[] attributeTypes = {Const.TYPE_CATEGORICAL, Const.TYPE_CATEGORICAL, Const.TYPE_NUMERICAL};
 
             System.out.println("Loading data set...");
-            D dataset = new D(filepath, ",", 8);
+            D dataset = new D(filepath, ",");
             
             // displaying dataset info
             System.out.println(

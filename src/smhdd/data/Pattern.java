@@ -108,15 +108,6 @@ public class Pattern implements Comparable<Pattern> {
         return false;        
     }
 
-    // public String display(D dataset){
-    //     String result = "Pattern(items={";
-    //     for(Integer e : this.items){
-    //         result = result + "(a:" + dataset.getItemAttributesInt()[e] + ", v:"+ dataset.getItemValuesInt()[e]+"),";
-    //     }
-    //     result = result + "}"+", quality="+this.quality+")";
-    //     return result;
-
-    // }
     public String display(D dataset) {
         // Capturing useful dataset information
         int[] attributeIndexes = dataset.getItemAttributeIndexes();
@@ -148,18 +139,18 @@ public class Pattern implements Comparable<Pattern> {
         } 
 
         int[] result = Evaluation.getPositiveAndNegativeCount(this, dataset);
-        int falsePositive = result[0];
-        int truePositive = result[1];
+        int fp = result[0];
+        int tp = result[1];
 
         str.append("} -> ");
         str.append(this.quality);
         str.append("(");
-        str.append(truePositive);
+        str.append(tp);
         str.append("p,");
-        str.append(falsePositive);
+        str.append(fp);
         str.append("n)");  
         str.append("(conf=");
-        //str.append(DPinfo.conf(this));
+        str.append(Evaluation.calculateConfidence(tp, fp));
         str.append(")");
         
         return str.toString();

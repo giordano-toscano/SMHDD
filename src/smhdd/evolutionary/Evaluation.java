@@ -19,16 +19,13 @@ public final class Evaluation {
     private Evaluation (){
         // Private constructor to prevent instantiation
     }
+
     public static void evaluatePopulation(Pattern[] population, D dataset){
         int populationSize = population.length;
-        IntStream.range(0, populationSize).parallel().forEach(i -> Evaluation.evaluatePattern(population[i], dataset));
-    }
-    
-    private static void evaluatePattern(Pattern p, D dataset){
-        int[] result = Evaluation.getPositiveAndNegativeCount(p, dataset);
-        int fp = result[0];
-        int tp = result[1];
-        p.setQuality(Evaluation.calculateQuality(fp, tp, p.getItems().size(), dataset));
+        IntStream.range(0, populationSize).parallel().forEach(i -> {
+            Pattern pattern = population[i];
+            pattern.setQuality(Evaluation.calculateQuality(pattern, dataset));
+        });
     }
 
     public static int[] getPositiveAndNegativeCount(Pattern p, D dataset){
@@ -105,10 +102,10 @@ public final class Evaluation {
         return endIndex;
     }
 
-    public static void setCoverageArraysInPattern(Pattern p, D dataset){
-        boolean[][] result = Evaluation.getPositiveAndNegativeCoverageArrays(p, dataset);
-        p.setNegativeCoverageArray(result[0]);
-        p.setPositiveCoverageArray(result[1]);
+    public static void setCoverageArraysInPattern(Pattern pattern, D dataset){
+        boolean[][] result = Evaluation.getPositiveAndNegativeCoverageArrays(pattern, dataset);
+        pattern.setNegativeCoverageArray(result[0]);
+        pattern.setPositiveCoverageArray(result[1]);
     }
 
     public static void setPositiveAndNegativeCoverageArrays(Pattern[] topK, Pattern[] pAsterisk, D dataset){
@@ -131,46 +128,49 @@ public final class Evaluation {
         IntStream.range(0, totalArray.length).parallel().forEach(i -> Evaluation.setCoverageArraysInPattern(totalArray[i], dataset));
     }
 
-    private static double calculateQuality(int fp, int tp, int patternSize, D dataset){
+    private static double calculateQuality(Pattern pattern, D dataset){
+        int[] result = Evaluation.getPositiveAndNegativeCount(pattern, dataset);
+        int fp = result[0];
+        int tp = result[1];
         double quality = 0.0;
 
         switch(Evaluation.evaluationMetric){
             case Const.METRIC_QG -> quality = Evaluation.calculateQg(tp, fp);
             case Const.METRIC_WRACC -> quality = Evaluation.calculateWRAcc(tp, fp, dataset);
             case Const.METRIC_WRACC_NORMALIZED -> quality = Evaluation.calculateWRAccN(tp, fp, dataset);
-            case Const.METRIC_WRACC_OVER_SIZE -> quality = Evaluation.calculateWRAcc(tp, fp, dataset) / patternSize;
+            case Const.METRIC_WRACC_OVER_SIZE -> quality = Evaluation.calculateWRAcc(tp, fp, dataset) / pattern.getItems().size();
             case Const.METRIC_SUB -> quality = Evaluation.calculateSub(tp, fp);
 
         }
         return quality;
     }   
 
-    private static double calculateWRAcc(int TP, int FP, D dataset){
+    private static double calculateWRAcc(int tp, int fp, D dataset){
         int globalExampleCount = dataset.getExampleCount();
         int globalPositiveExampleCount = dataset.getPositiveExampleCount();
 
-        if(TP==0 && FP==0){
+        if(tp==0 && fp==0){
             return 0.0;
         }
-        double sup = (double)(TP+FP) / (double)globalExampleCount;
-        double conf = (double)TP / (double)(TP+FP);
+        double sup = (double)(tp+fp) / (double)globalExampleCount;
+        double conf = (double)tp / (double)(tp+fp);
         double confD = (double)globalPositiveExampleCount / (double)globalExampleCount;
         double wracc = sup * ( conf  - confD);
                        
         return wracc;
     }
     
-    private static double calculateWRAccN(int TP, int FP, D dataset){             
-        return 4 * calculateWRAcc(TP, FP, dataset);
+    private static double calculateWRAccN(int tp, int fp, D dataset){             
+        return 4 * calculateWRAcc(tp, fp, dataset);
     }
     
-    private static double calculateQg(int TP, int FP){
-        double qg = (double)TP/(double)(FP+1);
+    private static double calculateQg(int tp, int fp){
+        double qg = (double)tp/(double)(fp+1);
         return qg;
     }
     
-    private static double calculateSub(int TP, int FP){
-        double sub = TP-FP;
+    private static double calculateSub(int tp, int fp){
+        double sub = tp-fp;
         return sub;
     }
 
@@ -229,6 +229,11 @@ public final class Evaluation {
         return valor;
         
     }
+
+    public static double calculateConfidence(double tp, double fp){
+        double confidence = tp / (tp+fp);
+        return confidence;
+    }   
 
     public static double calculateAverageDimension(Pattern[] p, int k){
         int total = 0;
