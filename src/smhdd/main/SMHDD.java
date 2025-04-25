@@ -40,7 +40,7 @@ public class SMHDD {
             
             // displaying dataset info
             System.out.println(
-                "### Data set:" + dataset.getName() + 
+                "\n### Data set:" + dataset.getName() + 
                 " (|I|= " + dataset.getItemCount() + 
                 "; |A|= " + dataset.getAttributeCount() +
                 "; |D|= " + dataset.getExampleCount() +
@@ -48,21 +48,20 @@ public class SMHDD {
                 "; |D-|= " + dataset.getNegativeExampleCount() +
                 ")"); 
 
-            System.out.println("Running SMHDD...");
+            System.out.println("\nRunning SMHDD...");
 
             long t0 = System.currentTimeMillis(); //Initial time
             Pattern[] topk = SMHDD.run(dataset, k,-1);
             double execution_time = (System.currentTimeMillis() - t0)/1000.0; // Total execution time        
             
-            // NEW AREAAA
             System.out.println("\n### Top-k subgroups:");
-            D.imprimirRegras(dataset, topk); 
+            dataset.displayPatterns(topk); 
             
-            //Informations about top-k DPs:  
-            System.out.println("\nAverage " + Evaluation.getEvaluationMetric() + ": " + Evaluation.avaliarMedia(topk, k));
+            //Info about the top-k patterns
+            System.out.println("\nAverage " + Evaluation.getEvaluationMetric() + ": " + Evaluation.calculateAverageQuality(topk, k));
             System.out.println("Time(s): " + execution_time);
-            // System.out.println("Average size: " + Avaliador.avaliarMediaDimensoes(p,k));        
-            // System.out.println("Coverage of all Pk DPs in relation to D+: " + Avaliador.coberturaPositivo(p, k)*100 + "%");
+            System.out.println("Average size: " + Evaluation.calculateAverageDimension(topk,k));        
+            System.out.println("Coverage of all top-k patterns in relation to D+: " + Evaluation.globalPositiveSupport(topk, k, dataset)*100 + "%");
             // System.out.println("Description Redundancy Item Dominador (|itemDominador|/k): " + DPinfo.descritionRedundancyDominator(p));
             // System.out.println("Number of individuals generated: " + Pattern.numeroIndividuosGerados);
             

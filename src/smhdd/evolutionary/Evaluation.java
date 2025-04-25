@@ -244,13 +244,29 @@ public final class Evaluation {
         return (double)total/(double)i;
     }
 
-    public static double avaliarMedia(Pattern[] p, int k){
+    public static double calculateAverageQuality(Pattern[] p, int k){
         double total = 0.0;
         int i = 0;
         for(; i < k; i++){
             total += p[i].getQuality();
         }
         return total/(double)i;
+    }
+
+    public static double globalPositiveSupport(Pattern[] p, int k, D dataset){
+        HashSet<Integer> coveredExamples = new HashSet<>();
+        
+        for(int i = 0; i < k; i++){
+            boolean[] vrpItem = p[i].getPositiveCoverageArray();
+            for(int j = 0; j < vrpItem.length; j++){
+                if(vrpItem[j]){
+                    coveredExamples.add(j);
+                }
+            }
+        }
+        
+        double globalPositiveSupport = (double) coveredExamples.size() / dataset.getPositiveExampleCount();
+        return globalPositiveSupport;
     }
 
     public static String getEvaluationMetric() {

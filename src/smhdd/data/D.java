@@ -384,11 +384,11 @@ public class D {
         return intervals;
     }
 
-    public static void imprimirRegras(D dataset, Pattern[] patterns){
+    public void displayPatterns(Pattern[] patterns){
         Pattern emptyPattern = new Pattern(new HashSet<>());
-        System.out.println(emptyPattern.display(dataset));
+        System.out.println(emptyPattern.display(this));
         for (Pattern pattern : patterns) 
-            System.out.println(pattern.display(dataset));     
+            System.out.println(pattern.display(this));     
     }
 
     public String retrieveItemValueAsString(int itemIndex){
