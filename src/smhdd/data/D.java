@@ -147,9 +147,9 @@ public class D {
 
         for(int i = 0; i < this.attributeCount; i++){
             HashSet<Object> distinctValuesSingleAttribute = new HashSet<>();         // stores distinct values of a single attribute
-            if(this.attributeTypes[i] == Const.TYPE_CATEGORICAL) // categorical attribute
+            if(this.attributeTypes[i] == Const.TYPE_CATEGORICAL) 
                 distinctValuesSingleAttribute.addAll(this.gatherCategoricalColumnValues(examplesStr, i));
-            else                                            // numerical attribute
+            else                                            
                 distinctValuesSingleAttribute.addAll(this.transformNumericalColumnIntoIntervals(examplesStr, i, numBins));
             this.itemCount += distinctValuesSingleAttribute.size();
             distinctAttributeValues[i] = distinctValuesSingleAttribute; // adds list of distinct values of attribute i in the i-th position of the "distinctAttributeValues" array
@@ -170,8 +170,8 @@ public class D {
             int valueIndex = 0;
             for(Object value : distinctValues){
                 if(this.attributeTypes[attributeIndex] == Const.TYPE_CATEGORICAL){
-                    categoricalItemValues[itemIndex] =  (String) value;
-                    categoricalItemValueIndexes[itemIndex] = valueIndex;
+                    this.categoricalItemValues[itemIndex] =  (String) value;
+                    this.categoricalItemValueIndexes[itemIndex] = valueIndex;
                 }else{
                     double[] interval = (double[]) value;
                     this.numericalItemMemory.put(itemIndex, new NumericalItem(attributeIndex, interval[0], interval[1]));
@@ -308,7 +308,7 @@ public class D {
         // Step 2: Sort the double array
         Arrays.sort(doubleArray);
 
-        return equalFrequencyBins(doubleArray, numBins);
+        return equalFrequencyBinsImproved(doubleArray, numBins);
     }
 
     // DeepSeek
@@ -339,6 +339,48 @@ public class D {
 
         return bins;
     }
+
+    // DeepSeek IMPROVED (no repeated intervals)
+    public static double[][] equalFrequencyBinsImproved(double[] sortedArray, int numBins) {
+        if (sortedArray == null || sortedArray.length == 0 || numBins <= 0) {
+            throw new IllegalArgumentException("Invalid input parameters.");
+        }
+
+        int n = sortedArray.length;
+        numBins = Math.min(numBins, n); // avoid empty bins when bins > n
+
+        int binSize = n / numBins;
+        int remainder = n % numBins;
+
+        java.util.List<double[]> unique = new java.util.ArrayList<>(numBins);
+        java.util.LinkedHashSet<String> seen = new java.util.LinkedHashSet<>();
+
+        int startIndex = 0;
+        for (int i = 0; i < numBins; i++) {
+            int endIndex = startIndex + binSize - 1;
+            if (remainder > 0) {
+                endIndex++;
+                remainder--;
+            }
+            if (endIndex < startIndex) endIndex = startIndex; // safety
+
+            double lo = sortedArray[startIndex];
+            double hi = sortedArray[endIndex];
+
+            // stable, exact key using bit patterns (avoids 1 vs 1.0 string quirks)
+            String key = Double.doubleToLongBits(lo) + "|" + Double.doubleToLongBits(hi);
+            if (seen.add(key)) {
+                unique.add(new double[]{lo, hi}); // keep only the first of equal intervals
+            }
+
+            startIndex = endIndex + 1;
+        }
+
+        double[][] result = new double[unique.size()][2];
+        for (int i = 0; i < unique.size(); i++) result[i] = unique.get(i);
+        return result;
+    }
+    //END DEEPSEEK IMPROVED
 
     // ChatGPT
     public static double[][] equalFrequencyDiscretization(double[] sortedArray, int numBins) {
