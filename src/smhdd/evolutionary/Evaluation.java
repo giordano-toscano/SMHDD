@@ -12,19 +12,16 @@ import smhdd.data.NumericalItemMemory;
 import smhdd.data.Pattern;
 
 public final class Evaluation {
-    private static String evaluationMetric;
-    private static byte similarityMeasure;
-    private static float minSimilarity;
     
     private Evaluation (){
         // Private constructor to prevent instantiation
     }
 
-    public static void evaluatePopulation(Pattern[] population, D dataset){
+    public static void evaluatePopulation(Pattern[] population, String evaluationMetric, D dataset){
         int populationSize = population.length;
         IntStream.range(0, populationSize).parallel().forEach(i -> {
             Pattern pattern = population[i];
-            pattern.setQuality(Evaluation.calculateQuality(pattern, dataset));
+            pattern.setQuality(Evaluation.calculateQuality(pattern, evaluationMetric, dataset));
         });
     }
 
@@ -91,7 +88,7 @@ public final class Evaluation {
         return true; 
     }
 
-    private static int getEndIndex(Pattern[] topK, Pattern[] pAsterisk, D dataset){
+    private static int getEndIndex(Pattern[] topK, Pattern[] pAsterisk){
         int endIndex = pAsterisk.length;
         for( int i = 0; i < pAsterisk.length; i++){
             if(pAsterisk[i].getQuality() <= topK[topK.length-1].getQuality()){
@@ -119,7 +116,7 @@ public final class Evaluation {
         }
         Pattern[] topkAndSimilarsArray = topkAndSimilars.toArray(Pattern[]::new);
         
-        int endIndex = getEndIndex(topK, pAsterisk, dataset);
+        int endIndex = getEndIndex(topK, pAsterisk);
 
         Pattern[] totalArray = new Pattern[endIndex+topkAndSimilarsArray.length];
         System.arraycopy(pAsterisk, 0, totalArray, 0, endIndex);        
@@ -128,13 +125,13 @@ public final class Evaluation {
         IntStream.range(0, totalArray.length).parallel().forEach(i -> Evaluation.setCoverageArraysInPattern(totalArray[i], dataset));
     }
 
-    private static double calculateQuality(Pattern pattern, D dataset){
+    private static double calculateQuality(Pattern pattern, String evaluationMetric, D dataset){
         int[] result = Evaluation.getPositiveAndNegativeCount(pattern, dataset);
         int fp = result[0];
         int tp = result[1];
         double quality = 0.0;
 
-        switch(Evaluation.evaluationMetric){
+        switch(evaluationMetric){
             case Const.METRIC_QG -> quality = Evaluation.calculateQg(tp, fp);
             case Const.METRIC_WRACC -> quality = Evaluation.calculateWRAcc(tp, fp, dataset);
             case Const.METRIC_WRACC_NORMALIZED -> quality = Evaluation.calculateWRAccN(tp, fp, dataset);
@@ -174,7 +171,7 @@ public final class Evaluation {
         return sub;
     }
 
-    public static double calculateSimilarity(Pattern p1, Pattern p2, D dataset){
+    public static double calculateSimilarity(Pattern p1, Pattern p2, byte similarityMeasure, D dataset){
         //REF: A Survey of Binary Similarity and Distance Measures (http://www.iiisci.org/Journal/CV$/sci/pdfs/GS315JG.pdf)
         double onlyA = 0.0;
         double onlyB = 0.0;
@@ -221,7 +218,7 @@ public final class Evaluation {
                 neitherAB++;                        
         }
         
-        double valor = switch(Evaluation.similarityMeasure){
+        double valor = switch(similarityMeasure){
             case Const.SIMILARIDADE_JACCARD -> bothAB/(onlyA + onlyB + bothAB);
             default -> 0;
         };
@@ -267,33 +264,6 @@ public final class Evaluation {
         
         double globalPositiveSupport = (double) coveredExamples.size() / dataset.getPositiveExampleCount();
         return globalPositiveSupport;
-    }
-
-    public static String getEvaluationMetric() {
-        // Ensure it's set only once
-        return Evaluation.evaluationMetric;
-    }
-
-    public static void setEvaluationMetric(String evaluationMetric) {
-        // Ensure it's set only once
-        if (Evaluation.evaluationMetric == null) { // compares to default value
-            Evaluation.evaluationMetric = evaluationMetric;
-        }
-    }
-    public static void setSimilarityMeasure(byte similarityMeasure) {
-        // Ensure it's set only once
-        if (Evaluation.similarityMeasure == 0) { // compares to default value
-            Evaluation.similarityMeasure = similarityMeasure;
-        }
-    }
-    public static void setMinSimilarity(float minSimilarity) {
-        if (Evaluation.minSimilarity == 0.0f) { // Ensure it's set only once
-            Evaluation.minSimilarity = minSimilarity;
-        }
-    }
-
-    public static float getMinSimilarity(){
-        return Evaluation.minSimilarity;
     }
 
     // Method 'getPositiveAndNegativeCoverageArrays' option 1 using IntStream

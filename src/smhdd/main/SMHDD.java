@@ -17,7 +17,7 @@ public class SMHDD {
 
         try {
             String directory = "datasets/";
-            String file = "matrixBinaria-Global-100-p.csv";
+            String file = "burczynski_og_labeled.csv";
             String filepath = directory+file;
 
             Const.random = new Random(Const.SEEDS[0]); 
@@ -25,13 +25,13 @@ public class SMHDD {
             // quantity of returned subgroups
             byte k = 10;
             // setting the maximum number of subgroups that are similar to another 
-            Pattern.setMaxSimilarQuantity((byte) 5);
+            Pattern.setMaxSimilarQuantity((byte) 2);
             // setting the evaluation metric
-            Evaluation.setEvaluationMetric(Const.METRIC_WRACC);
+            String evaluationMetric = Const.METRIC_WRACC;
             // setting the similarity measure
-            Evaluation.setSimilarityMeasure(Const.SIMILARIDADE_JACCARD); 
+            byte similarityMeasure = Const.SIMILARIDADE_JACCARD; 
             // setting threshold for determining when two subgroups are considered similar to each other
-            Evaluation.setMinSimilarity(0.90f); 
+            float minSimilarity = 0.90f; 
             // setting the type of each attribute
             // byte[] attributeTypes = {Const.TYPE_CATEGORICAL, Const.TYPE_CATEGORICAL, Const.TYPE_NUMERICAL};
 
@@ -51,14 +51,14 @@ public class SMHDD {
             System.out.println("\nRunning SMHDD...");
 
             long t0 = System.currentTimeMillis(); //Initial time
-            Pattern[] topk = SMHDD.run(dataset, k,-1);
+            Pattern[] topk = SMHDD.run(dataset, k, evaluationMetric, similarityMeasure, minSimilarity);
             double execution_time = (System.currentTimeMillis() - t0)/1000.0; // Total execution time        
             
             System.out.println("\n### Top-k subgroups:");
             dataset.displayPatterns(topk); 
             
             //Info about the top-k patterns
-            System.out.println("\nAverage " + Evaluation.getEvaluationMetric() + ": " + Evaluation.calculateAverageQuality(topk, k));
+            System.out.println("\nAverage " + evaluationMetric + ": " + Evaluation.calculateAverageQuality(topk, k));
             System.out.println("Time(s): " + execution_time);
             System.out.println("Average size: " + Evaluation.calculateAverageDimension(topk,k));        
             System.out.println("Coverage of all top-k patterns in relation to D+: " + Evaluation.globalPositiveSupport(topk, k, dataset)*100 + "%");
@@ -89,7 +89,7 @@ public class SMHDD {
         }
     }
 
-    public static Pattern[] run(D dataset, int k, double maxTimeSegundos){
+    public static Pattern[] run(D dataset, int k,  String evaluationMetric, byte similarityMeasure, float minSimilarity){
         
         Pattern[] topK = new Pattern[k];                
         // Initializes top-k with empty individuals
@@ -111,11 +111,11 @@ public class SMHDD {
         }else{
             population = populationAux;
         }      
-        Evaluation.evaluatePopulation(population, dataset);
+        Evaluation.evaluatePopulation(population, evaluationMetric, dataset);
         Arrays.sort(population);
 
         Evaluation.setPositiveAndNegativeCoverageArrays(topK, population, dataset);
-        Selection.saveRelevantPatterns(topK, population, dataset); 
+        Selection.saveRelevantPatterns(topK, population, similarityMeasure, minSimilarity, dataset); 
 
         int generationsWithoutImprovementCount = 0;
         boolean isFirstGeneration = true;
@@ -126,7 +126,7 @@ public class SMHDD {
         for(int resetCount = 0; resetCount < 3; resetCount++){ // Controls the number of resets
             if(resetCount > 0){
                 population = Initialization.initializeUsingTopK(dataset, populationSize, topK);
-                Evaluation.evaluatePopulation(population, dataset);    
+                Evaluation.evaluatePopulation(population, evaluationMetric, dataset);    
             }
 
             double mutationRate = 0.4; // Mutation rate starts at 0.4. Crossover rate is always 1-mutationRate.
@@ -139,13 +139,13 @@ public class SMHDD {
                 }else{
                     newPopulation = Crossover.applyUniformCrossoverInPopulation(population, mutationRate, dataset);        
                 }  
-                Evaluation.evaluatePopulation(newPopulation, dataset);
+                Evaluation.evaluatePopulation(newPopulation, evaluationMetric, dataset);
         
                 Pattern[] populationBest = Selection.selectBest(population, newPopulation); 
                 population = populationBest;   
 
                 Evaluation.setPositiveAndNegativeCoverageArrays(topK, populationBest, dataset);
-                int newlyAddedToTopk = Selection.saveRelevantPatterns(topK, populationBest, dataset); // Updating top-k and saving the number of added individuals
+                int newlyAddedToTopk = Selection.saveRelevantPatterns(topK, populationBest, similarityMeasure, minSimilarity, dataset); // Updating top-k and saving the number of added individuals
 
                 // Automatic adjustment of mutation and crossover rates
                 if(newlyAddedToTopk > 0 && mutationRate > 0.0) // Increases crossover rate if top-k is evolving and the mutation rate is higher than the lower limit
