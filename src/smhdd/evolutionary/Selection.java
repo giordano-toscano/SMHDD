@@ -11,7 +11,7 @@ public final class Selection {
         // Private constructor to prevent instantiation
     }
 
-    public static int saveRelevantPatterns(Pattern[] topK, Pattern[] pAsterisk, D dataset){
+    public static int saveRelevantPatterns(Pattern[] topK, Pattern[] pAsterisk, byte similarityMeasure, float minSimilarity, D dataset){
         int newlyAddedToTopk = 0;
         double similarity;
         for( int i = 0; i < pAsterisk.length && (pAsterisk[i].getQuality() > topK[topK.length-1].getQuality()); i++){
@@ -24,8 +24,8 @@ public final class Selection {
             //(3.2) similar com p_PAsterisco maior: p_PAsterisco engloba como similar p_Pk, ocupa a vaga em Pk[i] e reordena-se Pk
             for(int j = 0; j < topK.length; j++){
                 Pattern p_Pk = topK[j];
-                similarity = Evaluation.calculateSimilarity(p_Pk, p_PAsterisco, dataset);
-                if(similarity >= Evaluation.getMinSimilarity()){// Houve similaridade
+                similarity = Evaluation.calculateSimilarity(p_Pk, p_PAsterisco, similarityMeasure, dataset);
+                if(similarity >= minSimilarity){// Houve similaridade
                     //Se eles tiverem os mesmos itens, descartar! (1)
                     if(p_PAsterisco.isEqualTo(p_Pk)){
                         break; //sair do for que itera Pk 
@@ -47,7 +47,7 @@ public final class Selection {
                             
                             //filhos de p_Pk podem ser adicionado a Pk.
                             if(p_Pk.getSimilars() != null){
-                                Selection.saveRelevantPatterns(topK, p_Pk.getSimilars(), dataset);
+                                Selection.saveRelevantPatterns(topK, p_Pk.getSimilars(), similarityMeasure, minSimilarity, dataset);
                             }                            
                             Arrays.sort(topK);
                             newlyAddedToTopk++;
