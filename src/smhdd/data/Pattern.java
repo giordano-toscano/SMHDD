@@ -110,11 +110,9 @@ public class Pattern implements Comparable<Pattern> {
 
     public String display(D dataset) {
         // Capturing useful dataset information
-        int[] attributeIndexes = dataset.getItemAttributeIndexes();
         String[] variableNames = dataset.getVariableNames();
         String[] categoricalItemValues = dataset.getCategoricalItemValues();
         NumericalItemMemory numericalMemory = dataset.getNumericalItemMemory();
-        int itemCount = dataset.getItemCount();
         byte[] attributeTypes = dataset.getAttributeTypes();
 
         // Transforming the set of items into an array
@@ -126,7 +124,7 @@ public class Pattern implements Comparable<Pattern> {
 
         for(int i = 0; i < itemsArray.length; i++){
             int item = itemsArray[i];
-            int attributeIndex = item < itemCount ? attributeIndexes[item] : numericalMemory.getAttributeIndex(item);
+            int attributeIndex = dataset.getItemAttributeIndex(item);
             String antecedent, consequent;
             boolean isCategorical = attributeTypes[attributeIndex] == Const.TYPE_CATEGORICAL;
     

@@ -67,13 +67,11 @@ public final class Evaluation {
     }
 
     private static boolean isExampleCoveredByPattern(D dataset, HashSet<Integer> items, double[] example){
-        int[] attributeIndexes = dataset.getItemAttributeIndexes();
         int[] itemValues = dataset.getCategoricalItemValueIndexes();
-        int itemCount = dataset.getItemCount();
         byte[] attributeTypes = dataset.getAttributeTypes();
         NumericalItemMemory numericalMemory = dataset.getNumericalItemMemory();
         for(Integer item : items){
-            int attributeIndex = item < itemCount ? attributeIndexes[item] : numericalMemory.getAttributeIndex(item);
+            int attributeIndex = dataset.getItemAttributeIndex(item);
             double exampleAttributeValue = example[attributeIndex];
             if (attributeTypes[attributeIndex] == Const.TYPE_CATEGORICAL) {
                 int itemValue = itemValues[item];
@@ -110,7 +108,7 @@ public final class Evaluation {
         for(Pattern pattern : topK){
             Pattern[] similarsArray = pattern.getSimilars();
             if(similarsArray != null){
-                List<Pattern> similars = Arrays.asList(pattern.getSimilars());
+                List<Pattern> similars = Arrays.asList(similarsArray);
                 topkAndSimilars.addAll(similars);
             }
         }
@@ -125,7 +123,7 @@ public final class Evaluation {
         IntStream.range(0, totalArray.length).parallel().forEach(i -> Evaluation.setCoverageArraysInPattern(totalArray[i], dataset));
     }
 
-    private static double calculateQuality(Pattern pattern, String evaluationMetric, D dataset){
+    public static double calculateQuality(Pattern pattern, String evaluationMetric, D dataset){
         int[] result = Evaluation.getPositiveAndNegativeCount(pattern, dataset);
         int fp = result[0];
         int tp = result[1];

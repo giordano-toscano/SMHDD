@@ -24,7 +24,9 @@ public final class NumericalItem {
         if (this == obj) return true;
         if (obj == null || getClass() != obj.getClass()) return false;
         NumericalItem interval = (NumericalItem) obj;
-        return this.attributeIndex == interval.attributeIndex && this.start == interval.start && this.end == interval.end;
+        return this.attributeIndex == interval.attributeIndex && 
+            Double.compare(this.start, interval.start) == 0 && 
+            Double.compare(this.end, interval.end) == 0;
     }
 
     @Override

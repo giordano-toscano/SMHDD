@@ -3,6 +3,8 @@ package smhdd.data;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -26,28 +28,32 @@ public class D {
     private NumericalItemMemory numericalItemMemory;
 
     // Counters
-    private int itemCount;
+    private int itemCounter;
+    private int coreItemCount;
     private int attributeCount;
     private int exampleCount;
     private int positiveExampleCount;
     private int negativeExampleCount;
 
+    public boolean hasNumericalAttributes;
+
     // Constructors
-    public D(String path, String delimiter, String targetValue, byte datasetType, int numBins) throws IOException{
+    public D(String path, String delimiter, String targetValue, byte datasetType) throws IOException{
         String[][] examplesStr = this.loadFile(path, delimiter, datasetType);
-        this.generateItems(examplesStr, numBins);
+        this.generateItems(examplesStr);
         this.convertExamplesFromStrToDouble(examplesStr);
         this.extractLabels(examplesStr, targetValue);
         this.extractNumericalColumns();
+        this.hasNumericalAttributes = this.numericalAttributeExists();
     }
     public D(String path, String delimiter, String targetValue) throws IOException{
-        this(path, delimiter, targetValue, Const.DATASET_TYPE_CATEGORICAL, Const.DEFAULT_NUM_BINS);
+        this(path, delimiter, targetValue, Const.DATASET_TYPE_CATEGORICAL);
+    }
+    public D(String path, String delimiter, byte datasetType) throws IOException{
+        this(path, delimiter, "p", datasetType);
     }
     public D(String path, String delimiter) throws IOException{
-        this(path, delimiter, "p", Const.DATASET_TYPE_CATEGORICAL , Const.DEFAULT_NUM_BINS);
-    }
-    public D(String path, String delimiter, int numBins) throws IOException{
-        this(path, delimiter, "p", Const.DATASET_TYPE_AUTO_DETECT, numBins);
+        this(path, delimiter, "p", Const.DATASET_TYPE_AUTO_DETECT);
     }
 
     // Main Methods
@@ -139,8 +145,8 @@ public class D {
 
 
 
-    private void generateItems(String[][] examplesStr, int numBins){
-        this.itemCount = 0;
+    private void generateItems(String[][] examplesStr){
+        //this.itemCounter = 0;
                 
         @SuppressWarnings("unchecked")
         HashSet<Object>[] distinctAttributeValues = new HashSet[this.attributeCount]; // stores the distinct values of each attribute
@@ -150,19 +156,21 @@ public class D {
             if(this.attributeTypes[i] == Const.TYPE_CATEGORICAL) 
                 distinctValuesSingleAttribute.addAll(this.gatherCategoricalColumnValues(examplesStr, i));
             else                                            
-                distinctValuesSingleAttribute.addAll(this.transformNumericalColumnIntoIntervals(examplesStr, i, numBins));
-            this.itemCount += distinctValuesSingleAttribute.size();
+                distinctValuesSingleAttribute.addAll(this.transformNumericalColumnIntoIntervals(examplesStr, i, 1));
+            this.itemCounter += distinctValuesSingleAttribute.size();
             distinctAttributeValues[i] = distinctValuesSingleAttribute; // adds list of distinct values of attribute i in the i-th position of the "distinctAttributeValues" array
         }
-        
-        // creates 2 arrays to store attributes and values in their original format (String)
-        this.itemAttributes = new String[itemCount];
-        this.categoricalItemValues = new String[itemCount];
-        // creates another 2 arrays to store attributes and values mapped to integer values
-        this.itemAttributeIndexes = new int[itemCount];
-        this.categoricalItemValueIndexes = new int[itemCount];
 
-        this.numericalItemMemory = new NumericalItemMemory(itemCount);
+        this.coreItemCount = itemCounter; 
+
+        // creates 2 arrays to store attributes and values in their original format (String)
+        this.itemAttributes = new String[coreItemCount];
+        this.categoricalItemValues = new String[coreItemCount];
+        // creates another 2 arrays to store attributes and values mapped to integer values
+        this.itemAttributeIndexes = new int[coreItemCount];
+        this.categoricalItemValueIndexes = new int[coreItemCount];
+
+        this.numericalItemMemory = new NumericalItemMemory(coreItemCount);
 
         int itemIndex = 0;
         for(int attributeIndex = 0; attributeIndex < this.attributeCount; attributeIndex++){
@@ -433,11 +441,30 @@ public class D {
             System.out.println(pattern.display(this));     
     }
 
-    public String retrieveItemValueAsString(int itemIndex){
-        int attributeIndex = this.getItemAttributeIndexes()[itemIndex];
-        if(this.getAttributeTypes()[attributeIndex] == Const.TYPE_NUMERICAL){
+    // public String retrieveItemValueAsString(int itemIndex){
+    //     int attributeIndex = this.getItemAttributeIndexes()[itemIndex];
+    //     if(this.getAttributeTypes()[attributeIndex] == Const.TYPE_NUMERICAL){
+    //     }
+    //     return "";
+    // }
+
+    private boolean numericalAttributeExists(){
+        for(byte type : this.attributeTypes){
+            if(type == Const.TYPE_NUMERICAL)
+                return true;
         }
-        return "";
+        return false;
+    }
+
+    public static void saveToFile(NumericalItemMemory memory, String fileName) {
+        try {
+            Files.writeString(
+                Path.of(fileName),
+                memory.toString()
+            );
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     // GETs
@@ -466,7 +493,19 @@ public class D {
     }
 
     public int getItemCount(){
-        return this.itemCount;
+        return this.itemCounter;
+    }
+
+    public int getCoreItemCount(){
+        return this.coreItemCount;
+    }
+
+    public void addOneToItemCount(){
+        this.itemCounter = this.itemCounter + 1 ;
+    }
+    
+    public void substractOneFromItemCount(){
+        this.itemCounter = this.itemCounter - 1 ;
     }
 
     public double[][] getNumericalColumns(){
@@ -503,6 +542,11 @@ public class D {
 
     public NumericalItemMemory getNumericalItemMemory(){
         return this.numericalItemMemory;
+    }
+
+    public int getItemAttributeIndex(int item) {
+        int attributeIndex = item < this.coreItemCount ? this.itemAttributeIndexes[item] : this.numericalItemMemory.getAttributeIndex(item);
+        return attributeIndex;
     }
 
     // Main method

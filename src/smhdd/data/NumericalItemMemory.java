@@ -1,5 +1,6 @@
 package smhdd.data;
-import java.util.HashMap;
+//import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 public final class NumericalItemMemory {
@@ -9,17 +10,9 @@ public final class NumericalItemMemory {
     // Inverse mapping: value -> key.
     private final Map<NumericalItem, Integer> inverse;
 
-    private static int itemIndex;
-
-
-    public NumericalItemMemory(int size, int initialItemIndex) {
-        forward = new HashMap<>(2*size,1.0f);
-        inverse = new HashMap<>(2*size,1.0f);
-        NumericalItemMemory.itemIndex = initialItemIndex;
-    }
     public NumericalItemMemory(int size) {
-        forward = new HashMap<>(2*size,1.0f);
-        inverse = new HashMap<>(2*size,1.0f);
+        forward = new LinkedHashMap<>(2*size,1.0f);
+        inverse = new LinkedHashMap<>(2*size,1.0f);
     }
 
     /**
@@ -30,28 +23,40 @@ public final class NumericalItemMemory {
      * @param value the value
      * @return the value associated with the key
      */
-    public Integer put(NumericalItem value) {
-        Integer alreadyExistingKey = inverse.putIfAbsent(value, itemIndex);
+    public Integer put(Integer key, NumericalItem value) {
+        Integer alreadyExistingKey = inverse.putIfAbsent(value, key);
         if(alreadyExistingKey == null){
-            forward.put(itemIndex, value);
-            Integer keyPut = itemIndex;
-            itemIndex =  itemIndex + 1;
+            forward.put(key, value);
+            Integer keyPut = key;
             return keyPut;
         }
         
         return alreadyExistingKey;
     }
 
-    public Integer put(Integer key, NumericalItem value) {
+    public Integer put(Integer key, NumericalItem value, D dataset) {
         Integer alreadyExistingKey = inverse.putIfAbsent(value, key);
         if(alreadyExistingKey == null){
             forward.put(key, value);
             Integer keyPut = key;
-            itemIndex =  keyPut + 1;
+            dataset.addOneToItemCount();
             return keyPut;
         }
-        
         return alreadyExistingKey;
+    }
+
+    public void remove(Integer key, D dataset) {
+        // 1. Remove do mapa forward e recupera o valor
+        NumericalItem value = forward.remove(key);
+        
+        // 2. Se o valor existia, remove do mapa inverso
+        if (value != null) {
+            inverse.remove(value);
+        }
+        
+        if (dataset != null) {
+            dataset.substractOneFromItemCount();
+        }
     }
 
     /**
@@ -103,7 +108,22 @@ public final class NumericalItemMemory {
 
     @Override
     public String toString() {
-        return forward.toString();
+
+        StringBuilder sb = new StringBuilder();
+
+        sb.append("NumericalItemMemory {\n");
+
+        sb.append("  forward = {\n");
+        for (Map.Entry<Integer, NumericalItem> entry : forward.entrySet()) {
+            sb.append("    ")
+            .append(entry.getKey())
+            .append(" -> ")
+            .append(entry.getValue()) // uses NumericalItem.toString()
+            .append("\n");
+        }
+        sb.append("  }\n");
+
+        return sb.toString();
     }
 
     public Map<Integer, NumericalItem> getForward(){
@@ -114,22 +134,21 @@ public final class NumericalItemMemory {
         return this.forward;
     }
 
-    // A simple test for demonstration purposes.
     public static void main(String[] args) {
-        NumericalItemMemory biMap = new NumericalItemMemory(2000000, 0);
-        System.out.println(biMap.size());
-        biMap.put(new NumericalItem(1,4,6));
-        System.out.println(biMap.size());
-        biMap.put(new NumericalItem(2,4,6));
-        System.out.println(biMap.size());
+        // NumericalItemMemory biMap = new NumericalItemMemory(2000000, 0);
+        // System.out.println(biMap.size());
+        // biMap.put(new NumericalItem(1,4,6));
+        // System.out.println(biMap.size());
+        // biMap.put(new NumericalItem(2,4,6));
+        // System.out.println(biMap.size());
 
-        biMap.put(new NumericalItem(1,4,6));
-        System.out.println(biMap.put(new NumericalItem(1,4,6)));
+        // biMap.put(new NumericalItem(1,4,6));
+        // System.out.println(biMap.put(new NumericalItem(1,4,6)));
 
-        System.out.println("BiMap: " + biMap);
-        System.out.println("Key for 'Alice': " + biMap.getItemIndex( new NumericalItem(1,4,6)));
-        System.out.println("Value for 'student2': " + biMap.getNumericalItem(5));
-        System.out.println("BiMap after mapping 'Alice' to student3: " + biMap);
+        // System.out.println("BiMap: " + biMap);
+        // System.out.println("Key for 'Alice': " + biMap.getItemIndex( new NumericalItem(1,4,6)));
+        // System.out.println("Value for 'student2': " + biMap.getNumericalItem(5));
+        // System.out.println("BiMap after mapping 'Alice' to student3: " + biMap);
     }
 
     

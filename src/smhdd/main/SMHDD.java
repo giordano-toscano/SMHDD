@@ -5,6 +5,7 @@ import java.util.HashSet;
 import java.util.Random;
 import smhdd.data.Const;
 import smhdd.data.D;
+import smhdd.data.LocalDiscretization;
 import smhdd.data.Pattern;
 import smhdd.evolutionary.Crossover;
 import smhdd.evolutionary.Evaluation;
@@ -17,7 +18,7 @@ public class SMHDD {
 
         try {
             String directory = "datasets/";
-            String file = "burczynski_og_labeled.csv";
+            String file = "gravier_og_labeled.csv";
             String filepath = directory+file;
 
             Const.random = new Random(Const.SEEDS[0]); 
@@ -27,7 +28,7 @@ public class SMHDD {
             // setting the maximum number of subgroups that are similar to another 
             Pattern.setMaxSimilarQuantity((byte) 2);
             // setting the evaluation metric
-            String evaluationMetric = Const.METRIC_WRACC;
+            String evaluationMetric = Const.METRIC_WRACC_NORMALIZED;
             // setting the similarity measure
             byte similarityMeasure = Const.SIMILARIDADE_JACCARD; 
             // setting threshold for determining when two subgroups are considered similar to each other
@@ -65,7 +66,7 @@ public class SMHDD {
             // System.out.println("Description Redundancy Item Dominador (|itemDominador|/k): " + DPinfo.descritionRedundancyDominator(p));
             // System.out.println("Number of individuals generated: " + Pattern.numeroIndividuosGerados);
             
-            System.out.println("\n### Top-k and caches");
+            //System.out.println("\n### Top-k and caches");
             //Avaliador.imprimirRegrasSimilares(p, k); 
             // String[] metricas = {
             //     Const.METRICA_QUALIDADE,
@@ -140,6 +141,9 @@ public class SMHDD {
                     newPopulation = Crossover.applyUniformCrossoverInPopulation(population, mutationRate, dataset);        
                 }  
                 Evaluation.evaluatePopulation(newPopulation, evaluationMetric, dataset);
+
+               if(dataset.hasNumericalAttributes)
+                    newPopulation = LocalDiscretization.run(dataset, evaluationMetric, newPopulation, 0.1f);
         
                 Pattern[] populationBest = Selection.selectBest(population, newPopulation); 
                 population = populationBest;   
