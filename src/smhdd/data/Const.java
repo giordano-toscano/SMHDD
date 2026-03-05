@@ -24,5 +24,7 @@ public class Const {
     public final static byte DATASET_TYPE_CATEGORICAL = 1;
     public final static byte DATASET_TYPE_AUTO_DETECT = 2;
 
+    public final static float DEFAULT_LOCAL_DISCRETIZATION_RATE = 0.05f;
+
 
 }

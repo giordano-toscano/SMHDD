@@ -90,7 +90,13 @@ public class SMHDD {
         }
     }
 
+
     public static Pattern[] run(D dataset, int k,  String evaluationMetric, byte similarityMeasure, float minSimilarity){
+        
+        return run(dataset, k, evaluationMetric, similarityMeasure, minSimilarity, );
+    }
+
+    public static Pattern[] run(D dataset, int k,  String evaluationMetric, byte similarityMeasure, float minSimilarity, float rate){
         
         Pattern[] topK = new Pattern[k];                
         // Initializes top-k with empty individuals
@@ -143,7 +149,7 @@ public class SMHDD {
                 Evaluation.evaluatePopulation(newPopulation, evaluationMetric, dataset);
 
                if(dataset.hasNumericalAttributes)
-                    newPopulation = LocalDiscretization.run(dataset, evaluationMetric, newPopulation, 0.1f);
+                    newPopulation = LocalDiscretization.run(dataset, evaluationMetric, newPopulation, rate);
         
                 Pattern[] populationBest = Selection.selectBest(population, newPopulation); 
                 population = populationBest;   
