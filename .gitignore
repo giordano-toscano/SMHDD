@@ -33,3 +33,4 @@ replay_pid*
 
 # Folder containing test datasets
 datasets/
+results/
