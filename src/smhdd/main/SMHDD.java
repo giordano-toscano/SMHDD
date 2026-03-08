@@ -91,9 +91,16 @@ public class SMHDD {
     }
 
 
+    // For testing purposes only
+    public static Pattern[] run(D dataset, int k, String evaluationMetric, byte similarityMeasure, float minSimilarity,  float rate, String discretizationType, int numBins){
+        LocalDiscretization.discretizationType = discretizationType;
+        LocalDiscretization.numBins = numBins;
+        return run(dataset, k,  evaluationMetric, similarityMeasure, minSimilarity, rate);
+    }
+
+    // Final
     public static Pattern[] run(D dataset, int k,  String evaluationMetric, byte similarityMeasure, float minSimilarity){
-        
-        return run(dataset, k, evaluationMetric, similarityMeasure, minSimilarity, );
+        return run(dataset, k, evaluationMetric, similarityMeasure, minSimilarity, Const.DEFAULT_LOCAL_DISCRETIZATION_RATE);
     }
 
     public static Pattern[] run(D dataset, int k,  String evaluationMetric, byte similarityMeasure, float minSimilarity, float rate){
@@ -171,7 +178,7 @@ public class SMHDD {
             } 
             generationsWithoutImprovementCount = 0;
         }
-
+        LocalDiscretization.reset(); // Reset local discretization state for the next run
         return topK;
     }
 }

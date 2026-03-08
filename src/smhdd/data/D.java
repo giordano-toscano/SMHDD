@@ -11,6 +11,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Scanner;
 
+import smhdd.data.NumericalItem.Interval;
+
 public class D {
 
     private String name; // dataset name
@@ -143,8 +145,6 @@ public class D {
         return types;
     }
 
-
-
     private void generateItems(String[][] examplesStr){
         //this.itemCounter = 0;
                 
@@ -156,7 +156,7 @@ public class D {
             if(this.attributeTypes[i] == Const.TYPE_CATEGORICAL) 
                 distinctValuesSingleAttribute.addAll(this.gatherCategoricalColumnValues(examplesStr, i));
             else                                            
-                distinctValuesSingleAttribute.addAll(this.transformNumericalColumnIntoIntervals(examplesStr, i, 1));
+                distinctValuesSingleAttribute.addAll(this.transformNumericalColumnIntoIntervals(examplesStr, i));
             this.itemCounter += distinctValuesSingleAttribute.size();
             distinctAttributeValues[i] = distinctValuesSingleAttribute; // adds list of distinct values of attribute i in the i-th position of the "distinctAttributeValues" array
         }
@@ -181,8 +181,8 @@ public class D {
                     this.categoricalItemValues[itemIndex] =  (String) value;
                     this.categoricalItemValueIndexes[itemIndex] = valueIndex;
                 }else{
-                    double[] interval = (double[]) value;
-                    this.numericalItemMemory.put(itemIndex, new NumericalItem(attributeIndex, interval[0], interval[1]));
+                    Interval interval = (Interval) value;
+                    this.numericalItemMemory.put(itemIndex, new NumericalItem(attributeIndex, interval));
                 }
 
                 itemAttributes[itemIndex] = this.variableNames[attributeIndex];
@@ -194,14 +194,30 @@ public class D {
         }
     }
 
-    private List<double[]> transformNumericalColumnIntoIntervals(String[][] examplesStr, int attributeIndex, int numBins){
+    private List<Interval> transformNumericalColumnIntoIntervals(String[][] examplesStr, int attributeIndex){
         String[] array = new String[this.exampleCount]; 
         for(int i = 0; i < this.exampleCount; i++)
             array[i] = examplesStr[i][attributeIndex];
-        double[][] result = D.equalFrequencyBins(array, numBins);
-        List<double[]> list = new ArrayList<>();
-        list.addAll(Arrays.asList(result));
+        Interval result = D.getInterval(array);
+        List<Interval> list = new ArrayList<>();
+        list.add(result);
         return list;
+    }
+
+    private static Interval getInterval(String[] stringArray) {
+
+        if (stringArray == null) 
+            throw new IllegalArgumentException("Input array cannot be null.");
+  
+        // Convert String array to double array
+        double[] doubleArray = new double[stringArray.length];
+        for (int i = 0; i < stringArray.length; i++) 
+            doubleArray[i] = Double.parseDouble(stringArray[i]);
+        
+        // Sort the double array and get [min, max] interval
+        Arrays.sort(doubleArray);
+        Interval result = new Interval(doubleArray[0], doubleArray[doubleArray.length - 1], true, true);
+        return result;
     }
 
     private List<String> gatherCategoricalColumnValues(String[][] examplesStr, int attributeIndex){
@@ -299,139 +315,6 @@ public class D {
                 System.out.print(matrix1[col] + "\t");
             System.out.println();
         }
-    }
-
-    private static double[][] equalFrequencyBins(String[] stringArray, int numBins) {
-
-        if (stringArray == null) {
-            throw new IllegalArgumentException("Input array cannot be null.");
-        }
-
-        // Step 1: Convert String array to double array
-        double[] doubleArray = new double[stringArray.length];
-        for (int i = 0; i < stringArray.length; i++) {
-            doubleArray[i] = Double.parseDouble(stringArray[i]);
-        }
-
-        // Step 2: Sort the double array
-        Arrays.sort(doubleArray);
-
-        return equalFrequencyBinsImproved(doubleArray, numBins);
-    }
-
-    // DeepSeek
-    public static double[][] equalFrequencyBins(double[] sortedArray, int numBins) {
-        if (sortedArray == null || sortedArray.length == 0 || numBins <= 0) {
-            throw new IllegalArgumentException("Invalid input parameters.");
-        }
-
-        int n = sortedArray.length;
-        int binSize = n / numBins;
-        int remainder = n % numBins;
-
-        double[][] bins = new double[numBins][2];
-        int startIndex = 0;
-
-        for (int i = 0; i < numBins; i++) {
-            int endIndex = startIndex + binSize - 1;
-            if (remainder > 0) {
-                endIndex++;
-                remainder--;
-            }
-
-            bins[i][0] = sortedArray[startIndex];
-            bins[i][1] = sortedArray[endIndex];
-
-            startIndex = endIndex + 1;
-        }
-
-        return bins;
-    }
-
-    // DeepSeek IMPROVED (no repeated intervals)
-    public static double[][] equalFrequencyBinsImproved(double[] sortedArray, int numBins) {
-        if (sortedArray == null || sortedArray.length == 0 || numBins <= 0) {
-            throw new IllegalArgumentException("Invalid input parameters.");
-        }
-
-        int n = sortedArray.length;
-        numBins = Math.min(numBins, n); // avoid empty bins when bins > n
-
-        int binSize = n / numBins;
-        int remainder = n % numBins;
-
-        java.util.List<double[]> unique = new java.util.ArrayList<>(numBins);
-        java.util.LinkedHashSet<String> seen = new java.util.LinkedHashSet<>();
-
-        int startIndex = 0;
-        for (int i = 0; i < numBins; i++) {
-            int endIndex = startIndex + binSize - 1;
-            if (remainder > 0) {
-                endIndex++;
-                remainder--;
-            }
-            if (endIndex < startIndex) endIndex = startIndex; // safety
-
-            double lo = sortedArray[startIndex];
-            double hi = sortedArray[endIndex];
-
-            // stable, exact key using bit patterns (avoids 1 vs 1.0 string quirks)
-            String key = Double.doubleToLongBits(lo) + "|" + Double.doubleToLongBits(hi);
-            if (seen.add(key)) {
-                unique.add(new double[]{lo, hi}); // keep only the first of equal intervals
-            }
-
-            startIndex = endIndex + 1;
-        }
-
-        double[][] result = new double[unique.size()][2];
-        for (int i = 0; i < unique.size(); i++) result[i] = unique.get(i);
-        return result;
-    }
-    //END DEEPSEEK IMPROVED
-
-    // ChatGPT
-    public static double[][] equalFrequencyDiscretization(double[] sortedArray, int numBins) {
-        int n = sortedArray.length;
-        if (n == 0 || numBins <= 0) throw new IllegalArgumentException("Invalid input parameters");
-
-        double[][] intervals = new double[numBins][2];
-        int binSize = n / numBins;
-        int remainder = n % numBins; // Handle cases where n is not exactly divisible
-
-        int index = 0;
-        for (int i = 0; i < numBins; i++) {
-            int nextIndex = index + binSize + (i < remainder ? 1 : 0) - 1;
-            intervals[i][0] = sortedArray[index]; // Lower bound
-            intervals[i][1] = sortedArray[nextIndex]; // Upper bound
-            index = nextIndex + 1;
-        }
-        return intervals;
-    }
-
-    public static double[][] equalWidthDiscretization(double[] array, int numBins) {
-        int n = array.length;
-        if (n == 0 || numBins <= 0) throw new IllegalArgumentException("Invalid input parameters");
-
-        // Find min and max in a single pass (O(n))
-        double min = array[0], max = array[0];
-        for (int i = 1; i < n; i++) {
-            if (array[i] < min) min = array[i];
-            if (array[i] > max) max = array[i];
-        }
-
-        double width = (max - min) / numBins;
-        if (width == 0) return new double[][]{{min, max}}; // All values are the same
-
-        double[][] intervals = new double[numBins][2];
-
-        // Compute bin intervals
-        for (int i = 0; i < numBins; i++) {
-            intervals[i][0] = min + i * width;          // Lower bound
-            intervals[i][1] = min + (i + 1) * width;    // Upper bound
-        }
-
-        return intervals;
     }
 
     public void displayPatterns(Pattern[] patterns){
@@ -547,152 +430,6 @@ public class D {
     public int getItemAttributeIndex(int item) {
         int attributeIndex = item < this.coreItemCount ? this.itemAttributeIndexes[item] : this.numericalItemMemory.getAttributeIndex(item);
         return attributeIndex;
-    }
-
-    // Main method
-    public static void main(String[] args) throws IOException {
-        String directory = "datasets/";
-        String file = "alon.csv";
-        String filepath = directory+file;
-        D dataset  = new D(filepath, ",");
-
-        // System.out.println("PRINT nomeVariaveis:");
-        // for (String row : dataset.getVariableNames()) {
-        //     System.out.print(row + "\t");
-        //     System.out.println();
-        // }
-
-        // System.out.println("\nPRINT itemAtributosStr");
-        // for (String cell : dataset.getItemAttributes()) {
-        //     System.out.print(cell + "\t");
-        // }
-        // System.out.println("\nPRINT itemAtributosInt");
-        // for (int cell : dataset.getItemAttributeIndexes()) {
-        //     System.out.print(cell + "\t");
-        // }
-
-        // System.out.println("\nPRINT itemValuesObj");
-        // for (Object cell : dataset.getCategoricalItemValues()) {
-        //     System.out.print(cell + "\t");
-        // }
-        // System.out.println("\nPRINT itemValuesInt");
-        // for (int cell : dataset.getCategoricalItemValueIndexes()) {
-        //     System.out.print(cell + "\t");
-        // }
-        // System.out.println("\nPRINT NumericalValues");
-        // System.out.println(dataset.getNumericalItemMemory());
-
-        // System.out.println("\n\nBEFORE SORTING");
-    
-        // System.out.println("\nPRINT examplesTransposed");
-        // D.displayExamplesTransposed(dataset.getExamplesTransposed());
-
-        // System.out.println("\nPRINT examplesList");
-        // for (Example row : dataset.getExampleLists()) {
-        //     row.display();
-        // }
-
-        // System.out.println("\nAFTER SORTING");
-        // Arrays.sort(dataset.getExamplesTransposed()[2]);
-
-        // System.out.println("\nPRINT examplesTransposed");
-        // D.displayExamplesTransposed(dataset.getExamplesTransposed());
-
-        // System.out.println("\nPRINT examplesList");
-        // for (Example row : dataset.getExampleLists()) {
-        //     row.display();
-        // }
-        double[] doubleArray = {
-            -0.530,
-            0.858,
-            0.510,
-            0.800,
-           -0.680,
-           -0.290,
-            3.020,
-            1.150,
-            0.000,
-            0.490,
-            1.160,
-            0.350,
-           -0.430,
-            2.300,
-           -2.230,
-            0.390,
-           -1.460,
-           -1.220,
-           -1.990,
-           -1.690,
-           -1.340,
-            1.160,
-           -0.100,
-            2.120,
-            1.750,
-            0.570,
-           -2.080,
-           -1.940,
-           -2.370,
-           -2.570,
-           -3.760,
-            1.980,
-           -2.320,
-           -2.830,
-            1.320,
-            0.620,
-            1.640,
-           -0.350,
-            0.820,
-           -0.870,
-           -0.800,
-           -0.640,
-            0.732,
-            1.530,
-            1.050,
-            1.440,
-           -0.520,
-            0.680,
-           -1.630,
-           -0.320,
-           -1.860,
-           -1.740,
-           -2.530,
-            0.880,
-           -0.850,
-            0.290,
-            0.470,
-            0.540,
-            0.560,
-            1.160,
-            0.360,
-           -0.890,
-           -1.570,
-           -0.690,
-           -1.700,
-            1.080,
-           -0.540,
-           -0.770,
-            1.230,
-            0.860,
-            1.080,
-            0.970,
-            0.700,
-            2.310,
-            0.000,
-           -1.680,
-            2.540,
-            1.530,
-            2.060,
-            1.790,
-           -1.770,
-           -1.700,
-           -0.011,
-           -1.300,
-            0.550
-        };
-        Arrays.sort(doubleArray);
-        displayDoubleArray(equalFrequencyDiscretization(doubleArray, 2));
-        displayDoubleArray(equalFrequencyBins(doubleArray, 2));
-
     }
 
     public static void displayDoubleArray(double[][] array) {

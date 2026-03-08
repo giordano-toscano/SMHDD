@@ -19,8 +19,6 @@ public class Simulation {
     public static void main(String[] args){
 
         try {
-
-            Const.random = new Random(Const.SEEDS[0]); 
             
             // quantity of returned subgroups
             byte k = 10;
@@ -28,22 +26,26 @@ public class Simulation {
             Pattern.setMaxSimilarQuantity((byte) 2);
             // setting the evaluation metric
             String evaluationMetric = Const.METRIC_WRACC_NORMALIZED;
+			//String evaluationMetric = Const.METRIC_QG;
             // setting the similarity measure
             byte similarityMeasure = Const.SIMILARIDADE_JACCARD; 
             // setting threshold for determining when two subgroups are considered similar to each other
             float minSimilarity = 0.90f; 
 			// time limit in seconds for the execution of the algorithm (-1 for no limit)
-			int timeLimit = -1;
+			//int timeLimit = -1;
             // setting the type of each attribute
             // byte[] attributeTypes = {Const.TYPE_CATEGORICAL, Const.TYPE_CATEGORICAL, Const.TYPE_NUMERICAL};
 
 			byte repetitionNumber = 10;
+
 			String discretizationType = "freq"; // "width" or "freq"
-			float rate = 0.05f; // 
 			int numBins = 4; // number of bins for discretization (used only if discretizationType is "width")
 
+			//float rate = 0.05f; // 
+			float[] rates = {0.05f, 0.1f, 0.2f};
+
             System.out.println("\nRunning SMHDD...");
-			run(k, repetitionNumber, evaluationMetric, similarityMeasure, minSimilarity, rate, discretizationType, numBins);
+			run(k, repetitionNumber, evaluationMetric, similarityMeasure, minSimilarity, rates, discretizationType, numBins);
             
         } catch (IOException ex) {
         }
@@ -52,7 +54,7 @@ public class Simulation {
 	
 	
 	public static void run(byte k, byte repetitionNumber, String evaluationMetric, byte similarityMeasure,
-		float minSimilarity, float rate, String discretizationType, int numBins) throws IOException {
+		float minSimilarity, float[] rates, String discretizationType, int numBins) throws IOException {
 
 		File directory = new File("datasets/");
 		File[] files = directory.listFiles((d, name) -> name.toLowerCase().endsWith(".csv"));
@@ -61,7 +63,7 @@ public class Simulation {
 			return;
 		}
 
-		String fileName = getResultFileName(evaluationMetric, discretizationType, Float.toString(rate));
+		String fileName = getResultFileName(evaluationMetric, discretizationType, Integer.toString(numBins));
 		Path OUTPUT_PATH = Paths.get("results", fileName);
 		// Make sure "results" directory exists
 		if (OUTPUT_PATH.getParent() != null) {
@@ -81,37 +83,36 @@ public class Simulation {
 				String datasetPath = file.getAbsolutePath();
 				System.out.println("Dataset: " + file.getName());
 
-				//D dataset = new D(datasetPath, ",", 1);
-				
-				for (int rep = 1; rep <= repetitionNumber; rep++) {
+				for(float rate : rates ){
 
-					D dataset = new D(datasetPath, ",");
+					for (int rep = 1; rep <= repetitionNumber; rep++) {
 
-					Const.random = new Random(Const.SEEDS[rep]);
+						D dataset = new D(datasetPath, ",");
 
-					long initialTime = System.currentTimeMillis();
-					Pattern[] topk = SMHDD.run(dataset, k, evaluationMetric, similarityMeasure, minSimilarity, rate,  discretizationType, numBins);
-					double executionTime = (System.currentTimeMillis() - initialTime) / 1000.0;
-		
-					String datasetName = dataset.getName();
-					double averageQuality = Evaluation.calculateAverageQuality(topk, k);
-					double globalPositiveSupport = Evaluation.globalPositiveSupport(topk, k, dataset);
-					writeRow(writer, "SMHDD", datasetName, rep, averageQuality, globalPositiveSupport, executionTime);
-					writer.flush();
-				} // end of repetition
-				//dataset = null;
+						Const.random = new Random(Const.SEEDS[rep]);
+
+						long initialTime = System.currentTimeMillis();
+						Pattern[] topk = SMHDD.run(dataset, k, evaluationMetric, similarityMeasure, minSimilarity, rate,  discretizationType, numBins);
+						double executionTime = (System.currentTimeMillis() - initialTime) / 1000.0;
 			
+						String datasetName = dataset.getName();
+						double averageQuality = Evaluation.calculateAverageQuality(topk, k);
+						double globalPositiveSupport = Evaluation.globalPositiveSupport(topk, k, dataset);
+
+						StringBuilder algorithmName = new StringBuilder();
+						algorithmName.append("SMHDD").append("_").append(Float.toString(rate));
+						writeRow(writer, algorithmName.toString(), datasetName, rep, averageQuality, globalPositiveSupport, executionTime);
+						writer.flush();
+					} // end of repetition
+				}
 			} // end of dataset
 		}
 		System.out.println("Simulação concluída");
 	}
 
-    public static String getResultFileName(String evaluationMetric, String discretizationType, String localDiscretizationRate) {
+    public static String getResultFileName(String evaluationMetric, String discretizationType, String numBins) {
 		StringBuilder resultFileName = new StringBuilder();
-		//String discretizationType = "width";
-		//String localDiscretizationFunction = "random";
-		//String localDiscretizationRate = "0.7";
-		resultFileName.append("simulation-results_").append(evaluationMetric.toLowerCase()).append("_").append(discretizationType).append("_").append("_").append(localDiscretizationRate).append(".csv");
+		resultFileName.append("simulation-results_").append(evaluationMetric.toLowerCase()).append("_").append(discretizationType).append("-").append(numBins).append(".csv");
 		return resultFileName.toString();
     }
 
