@@ -98,85 +98,87 @@ public final class NumericalItem {
         }
     }
 
-    // public static void main(String[] args) {
-    //     // Example 1: mixed values + duplicates (already sorted)
-    //     double[] data1 = {
-    //         1, 1, 1,
-    //         2, 2,
-    //         3,
-    //         4, 4, 4, 4,
-    //         5,
-    //         6,
-    //         7, 7,
-    //         8,
-    //         9,
-    //         10, 10, 10, 10
-    //     };
+    public static void main(String[] args) {
+        // Example 1: mixed values + duplicates (already sorted)
+        // double[] data1 = {
+        //     1, 1, 1,
+        //     2, 2,
+        //     3,
+        //     4, 4, 4, 4,
+        //     5,
+        //     6,
+        //     7, 7,
+        //     8,
+        //     9,
+        //     10, 10, 10, 10
+        // };
 
-    //     // Example 2: heavy duplicates at the beginning (already sorted)
-    //     double[] data2 = {
-    //         0, 0, 0, 0, 0, 0, 0,
-    //         1, 1, 1,
-    //         2, 2,
-    //         3,
-    //         4, 4,
-    //         5
-    //     };
+        double[] data1 = {1,2,3,4,5,6,7,8,9,10,11,12};
 
-    //     // Example 3: all equal values (already sorted)
-    //     double[] data3 = { 5, 5, 5, 5, 5, 5, 5 };
+        // Example 2: heavy duplicates at the beginning (already sorted)
+        double[] data2 = {
+            0, 0, 0, 0, 0, 0, 0,
+            1, 1, 1,
+            2, 2,
+            3,
+            4, 4,
+            5
+        };
 
-    //     int k1 = 4;
-    //     int k2 = 4;
+        // Example 3: all equal values (already sorted)
+        double[] data3 = { 5, 5, 5, 5, 5, 5, 5 };
 
-    //     runTest("DATASET 1", data1, k1);
-    //     runTest("DATASET 2", data2, k2);
-    //     runTest("DATASET 3 (ALL EQUAL)", data3, k1);
+        int k1 = 4;
+        int k2 = 4;
 
-    //     System.out.println("# Testes com intervals");
-    //     Interval i1 = new Interval(+0.0, 567.1, false, false);
-    //     Interval i2 = new Interval(-0.0, 567.1, false, false);
-    //     System.out.println("São iguais ? "+ i1.equals(i2));
-    //     System.out.println("Hash do primeiro: "+ i1.hashCode());
-    //     System.out.println("Hash do segundo:  "+ i2.hashCode());
+        runTest("DATASET 1", data1, k1);
+        runTest("DATASET 2", data2, k2);
+        runTest("DATASET 3 (ALL EQUAL)", data3, k1);
 
-    //     System.out.println("# Testes com numerical items");
-    //     Interval i3 = new Interval(+0.0, 567.1, false, false);
-    //     Interval i4 = new Interval(-0.0, 567.1, false, false);
+        System.out.println("# Testes com intervals");
+        Interval i1 = new Interval(+0.0, 567.1, false, false);
+        Interval i2 = new Interval(-0.0, 567.1, false, false);
+        System.out.println("São iguais ? "+ i1.equals(i2));
+        System.out.println("Hash do primeiro: "+ i1.hashCode());
+        System.out.println("Hash do segundo:  "+ i2.hashCode());
 
-    //     NumericalItem n1 = new NumericalItem(1, i2);
-    //     NumericalItem n2 = new NumericalItem(1, i1);
+        System.out.println("# Testes com numerical items");
+        Interval i3 = new Interval(+0.0, 567.1, false, false);
+        Interval i4 = new Interval(-0.0, 567.1, false, false);
 
-    //     System.out.println("São iguais ? "+ n1.equals(n2));
-    //     System.out.println("Hash do primeiro: "+ n1.hashCode());
-    //     System.out.print("Hash do segundo:  "+ n2.hashCode());
+        NumericalItem n1 = new NumericalItem(1, i2);
+        NumericalItem n2 = new NumericalItem(1, i1);
+
+        System.out.println("São iguais ? "+ n1.equals(n2));
+        System.out.println("Hash do primeiro: "+ n1.hashCode());
+        System.out.print("Hash do segundo:  "+ n2.hashCode());
 
 
 
-    // }
+    }
 
-    // private static void runTest(String name, double[] data, int numIntervals) {
-    //     System.out.println("==================================================");
-    //     System.out.println(name);
-    //     System.out.println("n = " + data.length + ", numIntervals = " + numIntervals);
-    //     System.out.println("min = " + data[0] + ", max = " + data[data.length - 1]);
+    private static void runTest(String name, double[] data, int numIntervals) {
+        System.out.println("==================================================");
+        System.out.println(name);
+        System.out.println("n = " + data.length + ", numIntervals = " + numIntervals);
+        System.out.println("min = " + data[0] + ", max = " + data[data.length - 1]);
 
-    //     Interval[] ew = LocalDiscretization.equalWidthDiscretization(data, numIntervals);
-    //     Interval[] ef = LocalDiscretization.equalFrequencyDiscretization(data, numIntervals);
+        Interval[] ew = LocalDiscretization.equalWidthDiscretization(data, numIntervals);
+        Interval[] ef = LocalDiscretization.equalFrequencyDiscretization(data, numIntervals);
 
-    //     System.out.println("\nEqual-width intervals (" + ew.length + "):");
-    //     printIntervals(ew);
+        System.out.println("\nEqual-width intervals (" + ew.length + "):");
+        printIntervals(ew);
 
-    //     System.out.println("\nEqual-frequency intervals (" + ef.length + "):");
-    //     printIntervals(ef);
+        System.out.println("\nEqual-frequency intervals (" + ef.length + "):");
+        printIntervals(ef);
 
-    //     System.out.println();
-    // }
+        System.out.println();
+    }
 
-    // private static void printIntervals(Interval[] intervals) {
-    //     for (int i = 0; i < intervals.length; i++) {
-    //         System.out.println("  " + i + ": " + intervals[i]);
-    //     }
-    // }
+    private static void printIntervals(Interval[] intervals) {
+        for (int i = 0; i < intervals.length; i++) {
+            System.out.println("  " + i + ": " + intervals[i]);
+        }
+    }
 
 }

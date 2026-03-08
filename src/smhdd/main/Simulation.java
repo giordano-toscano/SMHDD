@@ -40,12 +40,13 @@ public class Simulation {
 
 			String discretizationType = "freq"; // "width" or "freq"
 			int numBins = 4; // number of bins for discretization (used only if discretizationType is "width")
+			String representation = "binary"; // "binary"
 
 			//float rate = 0.05f; // 
 			float[] rates = {0.05f, 0.1f, 0.2f};
 
             System.out.println("\nRunning SMHDD...");
-			run(k, repetitionNumber, evaluationMetric, similarityMeasure, minSimilarity, rates, discretizationType, numBins);
+			run(k, repetitionNumber, evaluationMetric, similarityMeasure, minSimilarity, rates, discretizationType, numBins, representation);
             
         } catch (IOException ex) {
         }
@@ -54,7 +55,7 @@ public class Simulation {
 	
 	
 	public static void run(byte k, byte repetitionNumber, String evaluationMetric, byte similarityMeasure,
-		float minSimilarity, float[] rates, String discretizationType, int numBins) throws IOException {
+		float minSimilarity, float[] rates, String discretizationType, int numBins, String representation) throws IOException {
 
 		File directory = new File("datasets/");
 		File[] files = directory.listFiles((d, name) -> name.toLowerCase().endsWith(".csv"));
@@ -63,7 +64,7 @@ public class Simulation {
 			return;
 		}
 
-		String fileName = getResultFileName(evaluationMetric, discretizationType, Integer.toString(numBins));
+		String fileName = getResultFileName(evaluationMetric, discretizationType, Integer.toString(numBins), representation);
 		Path OUTPUT_PATH = Paths.get("results", fileName);
 		// Make sure "results" directory exists
 		if (OUTPUT_PATH.getParent() != null) {
@@ -92,7 +93,7 @@ public class Simulation {
 						Const.random = new Random(Const.SEEDS[rep]);
 
 						long initialTime = System.currentTimeMillis();
-						Pattern[] topk = SMHDD.run(dataset, k, evaluationMetric, similarityMeasure, minSimilarity, rate,  discretizationType, numBins);
+						Pattern[] topk = SMHDD.run(dataset, k, evaluationMetric, similarityMeasure, minSimilarity, rate,  discretizationType, numBins, representation);
 						double executionTime = (System.currentTimeMillis() - initialTime) / 1000.0;
 			
 						String datasetName = dataset.getName();
@@ -110,9 +111,9 @@ public class Simulation {
 		System.out.println("Simulação concluída");
 	}
 
-    public static String getResultFileName(String evaluationMetric, String discretizationType, String numBins) {
+    public static String getResultFileName(String evaluationMetric, String discretizationType, String numBins, String representation) {
 		StringBuilder resultFileName = new StringBuilder();
-		resultFileName.append("simulation-results_").append(evaluationMetric.toLowerCase()).append("_").append(discretizationType).append("-").append(numBins).append(".csv");
+		resultFileName.append("simulation-results_").append(evaluationMetric.toLowerCase()).append("_").append(discretizationType).append("-").append(numBins).append("_").append(representation).append(".csv");
 		return resultFileName.toString();
     }
 

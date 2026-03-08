@@ -92,9 +92,10 @@ public class SMHDD {
 
 
     // For testing purposes only
-    public static Pattern[] run(D dataset, int k, String evaluationMetric, byte similarityMeasure, float minSimilarity,  float rate, String discretizationType, int numBins){
+    public static Pattern[] run(D dataset, int k, String evaluationMetric, byte similarityMeasure, float minSimilarity,  float rate, String discretizationType, int numBins, String representation){
         LocalDiscretization.discretizationType = discretizationType;
         LocalDiscretization.numBins = numBins;
+        LocalDiscretization.representation = representation;
         return run(dataset, k,  evaluationMetric, similarityMeasure, minSimilarity, rate);
     }
 
