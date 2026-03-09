@@ -25,8 +25,8 @@ public class Simulation {
             // setting the maximum number of subgroups that are similar to another 
             Pattern.setMaxSimilarQuantity((byte) 2);
             // setting the evaluation metric
-            String evaluationMetric = Const.METRIC_WRACC_NORMALIZED;
-			//String evaluationMetric = Const.METRIC_QG;
+            //String evaluationMetric = Const.METRIC_WRACC_NORMALIZED;
+			String evaluationMetric = Const.METRIC_QG;
             // setting the similarity measure
             byte similarityMeasure = Const.SIMILARIDADE_JACCARD; 
             // setting threshold for determining when two subgroups are considered similar to each other
@@ -39,8 +39,8 @@ public class Simulation {
 			byte repetitionNumber = 10;
 
 			String discretizationType = "freq"; // "width" or "freq"
-			int numBins = 4; // number of bins for discretization (used only if discretizationType is "width")
-			String representation = "binary"; // "binary"
+			int numBins = 2; // number of bins for discretization (used only if discretizationType is "width")
+			String representation = "nominal"; // "binary"
 
 			//float rate = 0.05f; // 
 			float[] rates = {0.05f, 0.1f, 0.2f};
