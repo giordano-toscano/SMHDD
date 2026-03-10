@@ -198,13 +198,12 @@ public class D {
         String[] array = new String[this.exampleCount]; 
         for(int i = 0; i < this.exampleCount; i++)
             array[i] = examplesStr[i][attributeIndex];
-        Interval result = D.getInterval(array);
+        Interval[] result = D.getIntervals(array);
         List<Interval> list = new ArrayList<>();
-        list.add(result);
+        list.addAll(Arrays.asList(result));
         return list;
     }
-
-    private static Interval getInterval(String[] stringArray) {
+    private static Interval[] getIntervals(String[] stringArray) {
 
         if (stringArray == null) 
             throw new IllegalArgumentException("Input array cannot be null.");
@@ -216,9 +215,33 @@ public class D {
         
         // Sort the double array and get [min, max] interval
         Arrays.sort(doubleArray);
-        Interval result = new Interval(doubleArray[0], doubleArray[doubleArray.length - 1], true, true);
+        Interval[] result;
+        if(LocalDiscretization.representation.equals("nominal")){
+            result = LocalDiscretization.discretizationType.equals("width") ? LocalDiscretization.equalWidthDiscretization(doubleArray, LocalDiscretization.numBins)
+                    : LocalDiscretization.equalFrequencyDiscretization(doubleArray, LocalDiscretization.numBins);
+        }else{
+            result = LocalDiscretization.discretizationType.equals("width") ? LocalDiscretization.equalWidthBinaryDiscretization(doubleArray, LocalDiscretization.numBins)
+                : LocalDiscretization.equalFrequencyBinaryDiscretization(doubleArray, LocalDiscretization.numBins);
+        }  
         return result;
     }
+
+    // // DEPRECATED
+    // private static Interval getInterval(String[] stringArray) {
+
+    //     if (stringArray == null) 
+    //         throw new IllegalArgumentException("Input array cannot be null.");
+  
+    //     // Convert String array to double array
+    //     double[] doubleArray = new double[stringArray.length];
+    //     for (int i = 0; i < stringArray.length; i++) 
+    //         doubleArray[i] = Double.parseDouble(stringArray[i]);
+        
+    //     // Sort the double array and get [min, max] interval
+    //     Arrays.sort(doubleArray);
+    //     Interval result = new Interval(doubleArray[0], doubleArray[doubleArray.length - 1], true, true);
+    //     return result;
+    //}
 
     private List<String> gatherCategoricalColumnValues(String[][] examplesStr, int attributeIndex){
         List<String> list = new ArrayList<>();
