@@ -27,7 +27,7 @@ public class Simulation {
             Pattern.setMaxSimilarQuantity((byte) 2);
             // setting the evaluation metric
             String evaluationMetric = Const.METRIC_QG;
-			//String evaluationMetric = Const.METRIC_QG;
+			//String evaluationMetric = Const.METRIC_WRACC_NORMALIZED;
             // setting the similarity measure
             byte similarityMeasure = Const.SIMILARIDADE_JACCARD; 
             // setting threshold for determining when two subgroups are considered similar to each other
@@ -39,12 +39,12 @@ public class Simulation {
 
 			byte repetitionNumber = 10;
 
-			String discretizationType = "width"; // "width" or "freq"
-			int numBins = 2; // number of bins for discretization (used only if discretizationType is "width")
-			String representation = "nominal"; // "binary"
+			String discretizationType = "freq"; // "width" or "freq"
+			int numBins = 8; // number of bins for discretization (used only if discretizationType is "width")
+			String representation = "binary"; // "binary" 
 
 			//float rate = 0.05f; // 
-			float[] rates = {0.05f, 0.1f, 0.2f};
+			float[] rates = {0.05f};
 
             System.out.println("\nRunning SMHDD...");
 			run(k, repetitionNumber, evaluationMetric, similarityMeasure, minSimilarity, rates, discretizationType, numBins, representation);
@@ -52,8 +52,39 @@ public class Simulation {
         } catch (IOException ex) {
         }
     }
-	
-	
+
+	/*
+	# Qg
+	freq-2_nominal [x]
+	freq-4_nominal [x]
+	freq-8_nominal [x]
+
+	freq-4_binary [x]
+	freq-8_binary []
+
+	width-2_nominal [x]
+	width-4_nominal [x]
+	width-8_nominal [x]
+
+	width-4_binary [x]
+	width-8_binary []
+
+	# WRAccN
+	freq-2_nominal [x]
+	freq-4_nominal [x]
+	freq-8_nominal [x]
+
+	freq-4_binary [x]
+	freq-8_binary []
+
+	width-2_nominal [x]
+	width-4_nominal [x]
+	width-8_nominal [x]
+
+	width-4_binary [x]
+	width-8_binary []
+
+	*/
 	
 	public static void run(byte k, byte repetitionNumber, String evaluationMetric, byte similarityMeasure,
 		float minSimilarity, float[] rates, String discretizationType, int numBins, String representation) throws IOException {

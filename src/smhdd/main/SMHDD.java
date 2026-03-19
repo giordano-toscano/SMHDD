@@ -105,6 +105,8 @@ public class SMHDD {
     }
 
     public static Pattern[] run(D dataset, int k,  String evaluationMetric, byte similarityMeasure, float minSimilarity, float rate){
+        long t0 = System.currentTimeMillis(); //Initial time
+        double maxTimeSegundos = 7200;
         
         Pattern[] topK = new Pattern[k];                
         // Initializes top-k with empty individuals
@@ -164,7 +166,13 @@ public class SMHDD {
 
                 Evaluation.setPositiveAndNegativeCoverageArrays(topK, populationBest, dataset);
                 int newlyAddedToTopk = Selection.saveRelevantPatterns(topK, populationBest, similarityMeasure, minSimilarity, dataset); // Updating top-k and saving the number of added individuals
-
+                
+                double tempo = (System.currentTimeMillis() - t0)/1000.0; //time
+                if(maxTimeSegundos > 0 && tempo > maxTimeSegundos){
+                    LocalDiscretization.reset();
+                    return topK;
+                }
+                
                 // Automatic adjustment of mutation and crossover rates
                 if(newlyAddedToTopk > 0 && mutationRate > 0.0) // Increases crossover rate if top-k is evolving and the mutation rate is higher than the lower limit
                     mutationRate -= 0.2;

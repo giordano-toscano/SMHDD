@@ -67,7 +67,7 @@ public class LocalDiscretization {
                 for (int j = 0; j < coveredExamples.size(); j++)
                     doubleArray[j] = coveredExamples.get(j)[attributeIndex];
 
-                Arrays.sort(doubleArray);
+                //Arrays.sort(doubleArray);
 
                 Interval[] result;
                 if(representation.equals("nominal")){
@@ -162,8 +162,9 @@ public class LocalDiscretization {
         if (n == 0 || numIntervals <= 0)
             return new Interval[0];
 
-        final double min = inputArray[0];
-        final double max = inputArray[n - 1];
+        double[] minAndMax = getMinMax(inputArray);
+        final double min = minAndMax[0];
+        final double max = minAndMax[1];
 
         if (Double.doubleToLongBits(min) == Double.doubleToLongBits(max)) {
             return new Interval[] { new Interval(min, max, true, true) };
@@ -185,6 +186,26 @@ public class LocalDiscretization {
         return out;
     }
 
+    public static double[] getMinMax(double[] values) {
+        if (values == null || values.length == 0) {
+            throw new IllegalArgumentException("O array não pode ser null ou vazio.");
+        }
+
+        double min = values[0];
+        double max = values[0];
+
+        for (int i = 1, len = values.length; i < len; i++) {
+            double v = values[i];
+
+            if (v < min) {
+                min = v;
+            } else if (v > max) {
+                max = v;
+            }
+        }
+        return new double[]{min,max};
+    }
+
     /**
      * Equal-frequency discretization using index-based quantile cuts on an already-sorted array.
      * Returns half-open bins [a,b) except the last which is [a,b].
@@ -195,6 +216,8 @@ public class LocalDiscretization {
         final int n = (inputArray == null) ? 0 : inputArray.length;
         if (n == 0 || numIntervals <= 0)
             return new Interval[0];
+
+        Arrays.sort(inputArray); // 
 
         final double min = inputArray[0];
         final double max = inputArray[n - 1];
