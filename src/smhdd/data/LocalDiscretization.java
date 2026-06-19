@@ -38,7 +38,7 @@ public class LocalDiscretization {
 
             Pattern newPattern = null;
             HashSet<Integer> finalItems = new HashSet<>();
-            double bestQuality = Double.MIN_VALUE;
+            double finalQuality = originalPatternQuality;
 
             // Fill newItems with the categorical items of the pattern
             for (int item : items) {
@@ -54,13 +54,12 @@ public class LocalDiscretization {
                 if (attributeTypes[attributeIndex] == Const.TYPE_CATEGORICAL)
                     continue;
 
-                bestQuality = Double.MIN_VALUE;
-
                 HashSet<Integer> itemsAux = new HashSet<>(finalItems);
                 itemsAux.add(item);
                 List<double[]> coveredExamples = getExamplesCoveredByItems(dataset, itemsAux);
 
                 if (coveredExamples.size() == 0) {
+                    finalQuality = originalPatternQuality;
                     break;
                 }
 
@@ -79,7 +78,7 @@ public class LocalDiscretization {
                         : equalFrequencyBinaryDiscretization(doubleArray, numBins);
                 }  
 
-                bestQuality = Evaluation.calculateQuality(new Pattern(itemsAux), evaluationMetric, dataset);
+                double bestQuality = Evaluation.calculateQuality(new Pattern(itemsAux), evaluationMetric, dataset);
                 int bestItemIndex = item;
 
                 for (Interval interval : result) {
@@ -101,13 +100,16 @@ public class LocalDiscretization {
                 }
 
                 finalItems.add(bestItemIndex);
+                finalQuality = bestQuality;
 
             }
+            //Pattern candidatePattern = new Pattern(finalItems);
+            //double finalQuality = Evaluation.calculateQuality(candidatePattern, evaluationMetric, dataset); // Calculate the quality of the final pattern one last time (Obs.: not necessary)
 
-            if (bestQuality > originalPatternQuality) {
+            if (finalQuality  > originalPatternQuality) {
                 // Pattern[] similars = pattern.getSimilars();
                 newPattern = new Pattern(finalItems);
-                newPattern.setQuality(bestQuality);
+                newPattern.setQuality(finalQuality);
                 newPattern.setSimilars(null);
                 wasModified = true;
             } else {

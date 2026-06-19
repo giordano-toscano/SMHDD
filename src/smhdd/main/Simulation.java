@@ -40,7 +40,7 @@ public class Simulation {
 			byte repetitionNumber = 10;
 
 			String discretizationType = "freq"; // "width" or "freq"
-			int numBins = 2; // number of bins for discretization (used only if discretizationType is "width")
+			int numBins = 4; // number of bins for discretization (used only if discretizationType is "width")
 			String representation = "nominal"; // "binary" 
 
 			//float rate = 0.05f; // 
