@@ -19,8 +19,8 @@ public class AggregateResults {
 //	private static final Path OUTPUT_PATH = Paths.get("results", "aggregated_results.csv");
 
     public static void main(String[] args) throws IOException {
-        Path inputPath = Paths.get("results\\FREQ\\Qg", "simulation-results_qg_freq-2_nominal.csv");
-        Path outputPath = Paths.get("results", "aggregated-results_qg_freq-2_nominal.csv");
+        Path inputPath = Paths.get("results", "simulation-results_qg_freq-4_binary.csv");
+        Path outputPath = Paths.get("results", "aggregated-results_qg_freq-4_binary.csv");
 
         Map<String, Stats> statsByAlgorithm = computeStatsByAlgorithm(inputPath);
         writeStatsCsv(statsByAlgorithm, outputPath);

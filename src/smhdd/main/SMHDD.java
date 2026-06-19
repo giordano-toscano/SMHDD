@@ -158,14 +158,22 @@ public class SMHDD {
                 }  
                 Evaluation.evaluatePopulation(newPopulation, evaluationMetric, dataset);
 
-               if(dataset.hasNumericalAttributes)
-                    newPopulation = LocalDiscretization.run(dataset, evaluationMetric, newPopulation, rate);
+            //    if(dataset.hasNumericalAttributes)
+            //         newPopulation = LocalDiscretization.run(dataset, evaluationMetric, newPopulation, rate);
         
                 Pattern[] populationBest = Selection.selectBest(population, newPopulation); 
                 population = populationBest;   
 
                 Evaluation.setPositiveAndNegativeCoverageArrays(topK, populationBest, dataset);
                 int newlyAddedToTopk = Selection.saveRelevantPatterns(topK, populationBest, similarityMeasure, minSimilarity, dataset); // Updating top-k and saving the number of added individuals
+
+                if(dataset.hasNumericalAttributes){
+                    topK = LocalDiscretization.run(dataset, evaluationMetric, topK, rate);
+                    Arrays.sort(topK);
+                    if (LocalDiscretization.wasModified == true && newlyAddedToTopk == 0)
+                        newlyAddedToTopk++;
+                    LocalDiscretization.wasModified = false;
+                }
                 
                 double tempo = (System.currentTimeMillis() - t0)/1000.0; //time
                 if(maxTimeSegundos > 0 && tempo > maxTimeSegundos){

@@ -40,11 +40,11 @@ public class Simulation {
 			byte repetitionNumber = 10;
 
 			String discretizationType = "freq"; // "width" or "freq"
-			int numBins = 8; // number of bins for discretization (used only if discretizationType is "width")
-			String representation = "binary"; // "binary" 
+			int numBins = 2; // number of bins for discretization (used only if discretizationType is "width")
+			String representation = "nominal"; // "binary" 
 
 			//float rate = 0.05f; // 
-			float[] rates = {0.05f};
+			float[] rates = {1.0f};
 
             System.out.println("\nRunning SMHDD...");
 			run(k, repetitionNumber, evaluationMetric, similarityMeasure, minSimilarity, rates, discretizationType, numBins, representation);

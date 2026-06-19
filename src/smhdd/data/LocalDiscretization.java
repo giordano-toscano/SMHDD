@@ -16,6 +16,7 @@ public class LocalDiscretization {
     public static int numBins;
     public static String discretizationType;
     public static String representation;
+    public static boolean wasModified;
 
     public static Pattern[] run(D dataset, String evaluationMetric, Pattern[] patterns, float rate) {
         if (localIndex == 0) {
@@ -108,6 +109,7 @@ public class LocalDiscretization {
                 newPattern = new Pattern(finalItems);
                 newPattern.setQuality(bestQuality);
                 newPattern.setSimilars(null);
+                wasModified = true;
             } else {
                 newPattern = pattern;
             }
@@ -150,6 +152,7 @@ public class LocalDiscretization {
     }
 
     public static void reset() {
+        wasModified = false;
         localIndex = 0;
     }
 
